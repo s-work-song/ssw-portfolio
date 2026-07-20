@@ -1,0 +1,17 @@
+{
+  "name": "ssw-portfolio",
+  "private": true,
+  "version": "0.0.0",
+  "description": "SW Song 모노레포 — 앱은 apps/, 공용 코드는 packages/",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w portfolio --",
+    "build": "npm run build -w portfolio",
+    "lint": "npm run lint -w portfolio",
+    "dev:hello-react": "npm run dev -w hello-react --",
+    "build:hello-react": "npm run build -w hello-react"
+  }
+}
