@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="timeline-data.js"></script>
+<style>
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+@keyframes tl-pulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--accent) 45%,transparent);}70%{box-shadow:0 0 0 11px color-mix(in srgb,var(--accent) 0%,transparent);}100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--accent) 0%,transparent);}}
+::-webkit-scrollbar{height:9px;width:9px;}
+::-webkit-scrollbar-thumb{background:color-mix(in srgb,var(--text) 16%,transparent);border-radius:9px;}
+::-webkit-scrollbar-track{background:transparent;}
+@media (max-width:760px){
+  .tl-alt-cell-l{padding-right:14px !important;}
+  .tl-alt-cell-r{padding-left:14px !important;}
+}
+[data-hscroll]{scrollbar-width:none;-ms-overflow-style:none;}
+[data-hscroll]::-webkit-scrollbar{height:0px;width:0px;background:transparent;}
+.tl-sbar{position:absolute;height:7px;border-radius:7px;background:color-mix(in srgb,var(--text) 28%,transparent);opacity:0;transition:opacity .55s ease;pointer-events:none;z-index:6;}
+</style>
+</helmet>
+
+<div class="tl-root" ref="{{ rootRef }}" style="--bg:#fbfbfd;--surface:#ffffff;--surface-2:#f3f3f7;--text:#17171e;--muted:#6c6c79;--border:#e8e8ef;--line:#dcdce5;--accent:oklch(0.55 0.17 275);--accent-contrast:#ffffff;--shadow:0 1px 2px rgba(20,20,45,.05), 0 1px 3px rgba(20,20,45,.04);--shadow-hover:0 16px 34px rgba(20,20,45,.13);--radius:14px;--line-style:solid;--card-lift:-4px;--dot-scale-hover:1.2;--card-shadow-hover:0 16px 34px rgba(20,20,45,.13);font-family:var(--font, 'Noto Sans KR', system-ui, sans-serif);color:var(--text);background:var(--bg);min-height:100vh;transition:background .3s ease, color .3s ease;">
+
+  <div style="position:sticky;top:0;z-index:30;background:color-mix(in srgb, var(--bg) 80%, transparent);backdrop-filter:saturate(1.4) blur(10px);-webkit-backdrop-filter:saturate(1.4) blur(10px);border-bottom:1px solid var(--border);">
+    <div style="max-width:1080px;margin:0 auto;padding:11px clamp(14px,4vw,28px);display:flex;align-items:center;justify-content:space-between;gap:12px;">
+      <div style="display:flex;align-items:center;gap:9px;">
+        <div style="width:11px;height:11px;border-radius:3px;background:var(--accent);"></div>
+        <span style="font:700 14.5px var(--font);letter-spacing:-0.01em;">타임라인 컴포넌트</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div style="display:flex;gap:3px;background:var(--surface-2);padding:3px;border-radius:10px;">
+          <button data-set="mode" data-val="light" onClick="{{ onPick }}" style="position:relative;border:0;background:transparent;padding:6px 11px;border-radius:8px;cursor:pointer;font:600 12px var(--font);color:var(--text);">
+            <sc-if value="{{ is.mLight }}" hint-placeholder-val="{{ true }}"><span style="position:absolute;inset:0;background:var(--surface);border-radius:8px;box-shadow:0 1px 2px rgba(0,0,0,.12);z-index:0;"></span></sc-if>
+            <span style="position:relative;z-index:1;">라이트</span>
+          </button>
+          <button data-set="mode" data-val="dark" onClick="{{ onPick }}" style="position:relative;border:0;background:transparent;padding:6px 11px;border-radius:8px;cursor:pointer;font:600 12px var(--font);color:var(--text);">
+            <sc-if value="{{ is.mDark }}"><span style="position:absolute;inset:0;background:var(--surface);border-radius:8px;box-shadow:0 1px 2px rgba(0,0,0,.12);z-index:0;"></span></sc-if>
+            <span style="position:relative;z-index:1;">다크</span>
+          </button>
+        </div>
+        <button onClick="{{ openDrawer }}" style="border:1px solid var(--border);background:var(--surface);color:var(--text);padding:8px 16px;border-radius:999px;cursor:pointer;font:600 13px var(--font);" style-hover="border-color:color-mix(in srgb,var(--accent) 45%, var(--border));color:var(--accent);">설정</button>
+      </div>
+    </div>
+  </div>
+
+  <nav style="position:sticky;top:49px;z-index:20;background:color-mix(in srgb, var(--bg) 82%, transparent);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid var(--border);">
+    <div style="max-width:1080px;margin:0 auto;padding:9px clamp(14px,4vw,28px);display:flex;gap:8px;overflow-x:auto;">
+      <a href="#tl-vertical" style="white-space:nowrap;padding:6px 13px;border-radius:999px;border:1px solid var(--border);background:var(--surface);color:var(--muted);font:600 12.5px var(--font);text-decoration:none;flex:0 0 auto;" style-hover="color:var(--accent);border-color:color-mix(in srgb,var(--accent) 40%,var(--border));">세로형</a>
+      <a href="#tl-horizontal" style="white-space:nowrap;padding:6px 13px;border-radius:999px;border:1px solid var(--border);background:var(--surface);color:var(--muted);font:600 12.5px var(--font);text-decoration:none;flex:0 0 auto;" style-hover="color:var(--accent);border-color:color-mix(in srgb,var(--accent) 40%,var(--border));">가로형</a>
+      <a href="#tl-serpentine" style="white-space:nowrap;padding:6px 13px;border-radius:999px;border:1px solid var(--border);background:var(--surface);color:var(--muted);font:600 12.5px var(--font);text-decoration:none;flex:0 0 auto;" style-hover="color:var(--accent);border-color:color-mix(in srgb,var(--accent) 40%,var(--border));">ㄹ자형</a>
+      <a href="#tl-roadmap" style="white-space:nowrap;padding:6px 13px;border-radius:999px;border:1px solid var(--border);background:var(--surface);color:var(--muted);font:600 12.5px var(--font);text-decoration:none;flex:0 0 auto;" style-hover="color:var(--accent);border-color:color-mix(in srgb,var(--accent) 40%,var(--border));">로드맵</a>
+      <a href="#tl-steps" style="white-space:nowrap;padding:6px 13px;border-radius:999px;border:1px solid var(--border);background:var(--surface);color:var(--muted);font:600 12.5px var(--font);text-decoration:none;flex:0 0 auto;" style-hover="color:var(--accent);border-color:color-mix(in srgb,var(--accent) 40%,var(--border));">단계 흐름</a>
+      <a href="#tl-progress" style="white-space:nowrap;padding:6px 13px;border-radius:999px;border:1px solid var(--border);background:var(--surface);color:var(--muted);font:600 12.5px var(--font);text-decoration:none;flex:0 0 auto;" style-hover="color:var(--accent);border-color:color-mix(in srgb,var(--accent) 40%,var(--border));">진행 상태</a>
+      <a href="#tl-changelog" style="white-space:nowrap;padding:6px 13px;border-radius:999px;border:1px solid var(--border);background:var(--surface);color:var(--muted);font:600 12.5px var(--font);text-decoration:none;flex:0 0 auto;" style-hover="color:var(--accent);border-color:color-mix(in srgb,var(--accent) 40%,var(--border));">변경 로그</a>
+      <a href="#tl-card" style="white-space:nowrap;padding:6px 13px;border-radius:999px;border:1px solid var(--border);background:var(--surface);color:var(--muted);font:600 12.5px var(--font);text-decoration:none;flex:0 0 auto;" style-hover="color:var(--accent);border-color:color-mix(in srgb,var(--accent) 40%,var(--border));">카드형</a>
+    </div>
+  </nav>
+
+  <header style="max-width:1080px;margin:0 auto;padding:clamp(28px,5vw,52px) clamp(14px,4vw,28px) 6px;">
+    <div style="font:600 12.5px ui-monospace,'SF Mono',Menlo,monospace;color:var(--accent);letter-spacing:.1em;">TIMELINE COMPONENTS · 8 TYPES</div>
+    <h1 style="margin:12px 0 0;font:700 clamp(28px,5vw,46px)/1.08 var(--font);letter-spacing:-0.025em;max-width:16ch;">웹에서 바로 쓰는 8가지 타임라인</h1>
+    <p style="margin:15px 0 0;font:400 clamp(15px,2.2vw,17px)/1.6 var(--font);color:var(--muted);max-width:54ch;">세로·가로·교차·로드맵부터 변경 로그까지. 오른쪽 위 <b style="color:var(--text);font-weight:600;">설정</b>에서 테마·강조 색상·폰트·인터랙션을 바꾸면 모든 타임라인에 즉시 적용됩니다.</p>
+    <div style="margin-top:24px;display:flex;gap:10px;flex-wrap:wrap;">
+      <button onClick="{{ openDrawer }}" style="background:var(--accent);color:var(--accent-contrast);border:0;padding:11px 20px;border-radius:999px;cursor:pointer;font:600 14px var(--font);box-shadow:var(--shadow);" style-hover="filter:brightness(1.06);transform:translateY(-1px);">설정 열기</button>
+      <a href="#tl-vertical" style="background:transparent;border:1px solid var(--border);color:var(--text);padding:11px 20px;border-radius:999px;cursor:pointer;font:600 14px var(--font);text-decoration:none;" style-hover="border-color:color-mix(in srgb,var(--accent) 45%,var(--border));">바로 보기</a>
+    </div>
+  </header>
+
+  <main style="max-width:1080px;margin:0 auto;padding:30px clamp(14px,4vw,28px) 0;display:flex;flex-direction:column;gap:34px;">
+
+    <section id="tl-vertical" style="scroll-margin-top:90px;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;">
+        <div>
+          <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;"><span style="font:700 19px var(--font);letter-spacing:-0.01em;">세로형</span><span style="font:600 11px ui-monospace,monospace;letter-spacing:.12em;color:var(--muted);">VERTICAL</span></div>
+          <div style="margin-top:5px;font:600 13px var(--font);color:var(--accent);">회사 연혁 · 브랜드 히스토리</div>
+        </div>
+        <span style="font:800 34px/1 ui-monospace,monospace;color:color-mix(in srgb, var(--text) 10%, transparent);">01</span>
+      </div>
+      <div style="margin-top:16px;background:var(--surface);border:1px solid var(--border);border-radius:calc(var(--radius) + 5px);padding:clamp(20px,3vw,32px);box-shadow:var(--shadow);">
+        <div style="display:flex;align-items:center;gap:7px;margin:0 0 16px 2px;"><span style="width:6px;height:6px;border-radius:50%;background:var(--accent);"></span><span style="font:700 12px var(--font);color:var(--muted);letter-spacing:.03em;">기본형 — 한쪽 정렬</span></div>
+        <div style="position:relative;">
+          <div style="position:absolute;left:20px;top:6px;bottom:14px;width:0;border-left:2px var(--line-style) var(--line);"></div>
+          <sc-for list="{{ history }}" as="item" hint-placeholder-count="4">
+            <div data-reveal style="position:relative;padding:0 0 24px 56px;">
+              <div style="position:absolute;left:20px;top:3px;transform:translateX(-50%);width:18px;height:18px;border-radius:50%;background:var(--surface);border:2px solid var(--accent);box-shadow:0 0 0 4px var(--surface);display:flex;align-items:center;justify-content:center;"><div style="width:7px;height:7px;border-radius:50%;background:var(--accent);"></div></div>
+              <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:15px 18px;transition:transform .25s ease, box-shadow .25s ease, border-color .25s ease;" style-hover="transform:translateY(var(--card-lift));box-shadow:var(--card-shadow-hover);border-color:color-mix(in srgb,var(--accent) 38%,var(--border));">
+                <div style="display:inline-flex;align-items:center;background:color-mix(in srgb,var(--accent) 12%,transparent);color:var(--accent);padding:3px 11px;border-radius:999px;font:700 13px ui-monospace,monospace;">{{ item.year }}</div>
+                <div style="margin-top:10px;font:700 16.5px var(--font);letter-spacing:-0.01em;">{{ item.title }}</div>
+                <div style="margin-top:5px;font:400 14px/1.6 var(--font);color:var(--muted);">{{ item.desc }}</div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="height:1px;background:var(--border);margin:26px 0;"></div>
+        <div style="display:flex;align-items:center;gap:7px;margin:0 0 6px 2px;"><span style="width:6px;height:6px;border-radius:50%;background:var(--accent);"></span><span style="font:700 12px var(--font);color:var(--muted);letter-spacing:.03em;">교차형 — 축 양옆 번갈아</span></div>
+        <div style="position:relative;padding:6px 0;">
+          <div class="tl-alt-line" style="position:absolute;left:50%;top:8px;bottom:8px;width:0;border-left:2px var(--line-style) var(--line);transform:translateX(-50%);"></div>
+          <sc-for list="{{ history }}" as="item" hint-placeholder-count="5">
+            <div data-reveal class="tl-alt-row" style="position:relative;display:grid;grid-template-columns:1fr 1fr;align-items:center;margin-bottom:10px;">
+              <sc-if value="{{ item.left }}" hint-placeholder-val="{{ true }}">
+                <div class="tl-alt-cell-l" style="grid-column:1;justify-self:end;text-align:right;padding-right:40px;">
+                  <div style="display:inline-block;text-align:left;max-width:340px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:15px 18px;transition:transform .25s ease, box-shadow .25s ease, border-color .25s ease;" style-hover="transform:translateY(var(--card-lift));box-shadow:var(--card-shadow-hover);border-color:color-mix(in srgb,var(--accent) 38%,var(--border));">
+                    <div style="font:700 13px ui-monospace,monospace;color:var(--accent);">{{ item.year }}</div>
+                    <div style="margin-top:6px;font:700 16px var(--font);letter-spacing:-0.01em;">{{ item.title }}</div>
+                    <div style="margin-top:5px;font:400 13.5px/1.55 var(--font);color:var(--muted);">{{ item.desc }}</div>
+                  </div>
+                </div>
+              </sc-if>
+              <sc-if value="{{ item.right }}">
+                <div class="tl-alt-cell-r" style="grid-column:2;justify-self:start;text-align:left;padding-left:40px;">
+                  <div style="display:inline-block;text-align:left;max-width:340px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:15px 18px;transition:transform .25s ease, box-shadow .25s ease, border-color .25s ease;" style-hover="transform:translateY(var(--card-lift));box-shadow:var(--card-shadow-hover);border-color:color-mix(in srgb,var(--accent) 38%,var(--border));">
+                    <div style="font:700 13px ui-monospace,monospace;color:var(--accent);">{{ item.year }}</div>
+                    <div style="margin-top:6px;font:700 16px var(--font);letter-spacing:-0.01em;">{{ item.title }}</div>
+                    <div style="margin-top:5px;font:400 13.5px/1.55 var(--font);color:var(--muted);">{{ item.desc }}</div>
+                  </div>
+                </div>
+              </sc-if>
+              <div class="tl-alt-dot" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:17px;height:17px;border-radius:50%;background:var(--surface);border:2px solid var(--accent);box-shadow:0 0 0 4px var(--surface);display:flex;align-items:center;justify-content:center;z-index:1;"><div style="width:6px;height:6px;border-radius:50%;background:var(--accent);"></div></div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="height:1px;background:var(--border);margin:26px 0;"></div>
+        <div style="display:flex;align-items:center;gap:7px;margin:0 0 8px 2px;"><span style="width:6px;height:6px;border-radius:50%;background:var(--accent);"></span><span style="font:700 12px var(--font);color:var(--muted);letter-spacing:.03em;">교차형 — 조밀 간격 (타이트)</span></div>
+        <div style="position:relative;padding:2px 0;">
+          <div class="tl-alt-line" style="position:absolute;left:50%;top:4px;bottom:4px;width:0;border-left:2px var(--line-style) var(--line);transform:translateX(-50%);"></div>
+          <sc-for list="{{ history }}" as="item" hint-placeholder-count="5">
+            <div data-reveal class="tl-alt-row" style="position:relative;display:grid;grid-template-columns:1fr 1fr;align-items:center;margin-bottom:-18px;">
+              <sc-if value="{{ item.left }}" hint-placeholder-val="{{ true }}">
+                <div class="tl-alt-cell-l" style="grid-column:1;justify-self:end;text-align:right;padding-right:28px;">
+                  <div style="display:inline-block;text-align:left;max-width:300px;background:var(--surface);border:1px solid var(--border);border-radius:calc(var(--radius) * 0.62);box-shadow:var(--shadow);padding:8px 13px;transition:transform .25s ease, box-shadow .25s ease, border-color .25s ease;" style-hover="transform:translateY(var(--card-lift));box-shadow:var(--card-shadow-hover);border-color:color-mix(in srgb,var(--accent) 38%,var(--border));">
+                    <div style="display:flex;align-items:baseline;gap:8px;"><span style="font:700 11.5px ui-monospace,monospace;color:var(--accent);">{{ item.year }}</span><span style="font:700 13.5px var(--font);">{{ item.title }}</span></div>
+                    <div style="margin-top:3px;font:400 12px/1.45 var(--font);color:var(--muted);">{{ item.desc }}</div>
+                  </div>
+                </div>
+              </sc-if>
+              <sc-if value="{{ item.right }}">
+                <div class="tl-alt-cell-r" style="grid-column:2;justify-self:start;text-align:left;padding-left:28px;">
+                  <div style="display:inline-block;text-align:left;max-width:300px;background:var(--surface);border:1px solid var(--border);border-radius:calc(var(--radius) * 0.62);box-shadow:var(--shadow);padding:8px 13px;transition:transform .25s ease, box-shadow .25s ease, border-color .25s ease;" style-hover="transform:translateY(var(--card-lift));box-shadow:var(--card-shadow-hover);border-color:color-mix(in srgb,var(--accent) 38%,var(--border));">
+                    <div style="display:flex;align-items:baseline;gap:8px;"><span style="font:700 11.5px ui-monospace,monospace;color:var(--accent);">{{ item.year }}</span><span style="font:700 13.5px var(--font);">{{ item.title }}</span></div>
+                    <div style="margin-top:3px;font:400 12px/1.45 var(--font);color:var(--muted);">{{ item.desc }}</div>
+                  </div>
+                </div>
+              </sc-if>
+              <div class="tl-alt-dot" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:13px;height:13px;border-radius:50%;background:var(--surface);border:2px solid var(--accent);box-shadow:0 0 0 3px var(--surface);z-index:1;"></div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </section>
+
+    <section id="tl-horizontal" style="scroll-margin-top:90px;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;">
+        <div>
+          <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;"><span style="font:700 19px var(--font);letter-spacing:-0.01em;">가로형</span><span style="font:600 11px ui-monospace,monospace;letter-spacing:.12em;color:var(--muted);">HORIZONTAL</span></div>
+          <div style="margin-top:5px;font:600 13px var(--font);color:var(--accent);">프로젝트 마일스톤</div>
+        </div>
+        <span style="font:800 34px/1 ui-monospace,monospace;color:color-mix(in srgb, var(--text) 10%, transparent);">02</span>
+      </div>
+      <div style="margin-top:16px;background:var(--surface);border:1px solid var(--border);border-radius:calc(var(--radius) + 5px);padding:clamp(20px,3vw,30px) clamp(8px,2vw,16px);box-shadow:var(--shadow);">
+        <div style="display:flex;align-items:center;gap:7px;margin:0 0 14px 2px;"><span style="width:6px;height:6px;border-radius:50%;background:var(--accent);"></span><span style="font:700 12px var(--font);color:var(--muted);letter-spacing:.03em;">기본형 — 라벨 위 정렬</span></div>
+        <div data-hscroll style="overflow-x:auto;overflow-y:hidden;padding-bottom:4px;">
+          <div style="display:flex;min-width:min-content;">
+            <sc-for list="{{ milestones }}" as="m" hint-placeholder-count="5">
+              <div data-reveal style="min-width:160px;flex:1 1 160px;text-align:center;display:flex;flex-direction:column;">
+                <div style="padding:0 9px;font:700 12.5px ui-monospace,monospace;color:var(--accent);margin-bottom:12px;">{{ m.date }}</div>
+                <div style="position:relative;height:16px;margin-bottom:16px;">
+                  <div style="position:absolute;left:0;right:0;top:50%;border-top:2px var(--line-style) var(--line);transform:translateY(-50%);"></div>
+                  <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:16px;height:16px;border-radius:50%;background:var(--surface);border:2px solid var(--accent);box-shadow:0 0 0 4px var(--surface);z-index:1;"></div>
+                </div>
+                <div style="padding:0 9px;">
+                  <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:13px 12px;transition:transform .25s ease, box-shadow .25s ease, border-color .25s ease;" style-hover="transform:translateY(var(--card-lift));box-shadow:var(--card-shadow-hover);border-color:color-mix(in srgb,var(--accent) 38%,var(--border));">
+                    <div style="font:700 14.5px var(--font);">{{ m.title }}</div>
+                    <div style="margin-top:4px;font:400 12.5px/1.5 var(--font);color:var(--muted);">{{ m.sub }}</div>
+                  </div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        <div style="height:1px;background:var(--border);margin:24px 0;"></div>
+        <div style="display:flex;align-items:center;gap:7px;margin:0 0 6px 2px;"><span style="width:6px;height:6px;border-radius:50%;background:var(--accent);"></span><span style="font:700 12px var(--font);color:var(--muted);letter-spacing:.03em;">교차형 — 축 위·아래 번갈아</span></div>
+        <div data-hscroll style="overflow-x:auto;overflow-y:hidden;padding:4px 0;">
+          <div style="position:relative;display:flex;min-width:min-content;">
+            <div style="position:absolute;left:12px;right:12px;top:50%;border-top:2px var(--line-style) var(--line);transform:translateY(-50%);"></div>
+            <sc-for list="{{ milestones }}" as="m" hint-placeholder-count="5">
+              <div data-reveal style="position:relative;min-width:158px;flex:1 1 158px;height:240px;padding:0 9px;">
+                <sc-if value="{{ m.up }}" hint-placeholder-val="{{ true }}">
+                  <div style="position:absolute;left:9px;right:9px;bottom:calc(50% + 17px);">
+                    <div style="position:absolute;left:50%;bottom:-17px;width:2px;height:17px;background:var(--line);transform:translateX(-50%);"></div>
+                    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:11px 13px;text-align:center;transition:transform .25s ease, box-shadow .25s ease, border-color .25s ease;" style-hover="transform:translateY(var(--card-lift));box-shadow:var(--card-shadow-hover);border-color:color-mix(in srgb,var(--accent) 38%,var(--border));">
+                      <div style="font:700 12px ui-monospace,monospace;color:var(--accent);">{{ m.date }}</div>
+                      <div style="margin-top:3px;font:700 14px var(--font);">{{ m.title }}</div>
+                      <div style="margin-top:2px;font:400 12px/1.45 var(--font);color:var(--muted);">{{ m.sub }}</div>
+                    </div>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ m.down }}">
+                  <div style="position:absolute;left:9px;right:9px;top:calc(50% + 17px);">
+                    <div style="position:absolute;left:50%;top:-17px;width:2px;height:17px;background:var(--line);transform:translateX(-50%);"></div>
+                    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:11px 13px;text-align:center;transition:transform .25s ease, box-shadow .25s ease, border-color .25s ease;" style-hover="transform:translateY(var(--card-lift));box-shadow:var(--card-shadow-hover);border-color:color-mix(in srgb,var(--accent) 38%,var(--border));">
+                      <div style="font:700 12px ui-monospace,monospace;color:var(--accent);">{{ m.date }}</div>
+                      <div style="margin-top:3px;font:700 14px var(--font);">{{ m.title }}</div>
+                      <div style="margin-top:2px;font:400 12px/1.45 var(--font);color:var(--muted);">{{ m.sub }}</div>
+                    </div>
+                  </div>
+                </sc-if>
+                <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:16px;height:16px;border-radius:50%;background:var(--surface);border:2px solid var(--accent);box-shadow:0 0 0 4px var(--surface);z-index:2;display:flex;align-items:center;justify-content:center;"><div style="width:6px;height:6px;border-radius:50%;background:var(--accent);"></div></div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        <div style="height:1px;background:var(--border);margin:24px 0;"></div>
+        <div style="display:flex;align-items:center;gap:7px;margin:0 0 6px 2px;"><span style="width:6px;height:6px;border-radius:50%;background:var(--accent);"></span><span style="font:700 12px var(--font);color:var(--muted);letter-spacing:.03em;">교차형 — 조밀 간격 (타이트)</span></div>
+        <div data-hscroll style="overflow-x:auto;overflow-y:hidden;padding:4px 16px;">
+          <div style="position:relative;display:flex;min-width:min-content;">
+            <div style="position:absolute;left:8px;right:8px;top:50%;border-top:2px var(--line-style) var(--line);transform:translateY(-50%);"></div>
+            <sc-for list="{{ milestones }}" as="m" hint-placeholder-count="5">
+              <div data-reveal style="position:relative;min-width:0;flex:0 0 84px;height:170px;">
+                <sc-if value="{{ m.up }}" hint-placeholder-val="{{ true }}">
+                  <div style="position:absolute;left:50%;transform:translateX(-50%);width:108px;bottom:calc(50% + 14px);">
+                    <div style="position:absolute;left:50%;bottom:-14px;width:2px;height:14px;background:var(--line);transform:translateX(-50%);"></div>
+                    <div style="background:var(--surface);border:1px solid var(--border);border-radius:calc(var(--radius) * 0.7);box-shadow:var(--shadow);padding:8px 9px;text-align:center;transition:transform .25s ease, box-shadow .25s ease, border-color .25s ease;" style-hover="transform:translateY(var(--card-lift));box-shadow:var(--card-shadow-hover);border-color:color-mix(in srgb,var(--accent) 38%,var(--border));">
+                      <div style="font:700 11px ui-monospace,monospace;color:var(--accent);">{{ m.date }}</div>
+                      <div style="margin-top:2px;font:700 12.5px/1.3 var(--font);">{{ m.title }}</div>
+                    </div>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ m.down }}">
+                  <div style="position:absolute;left:50%;transform:translateX(-50%);width:108px;top:calc(50% + 14px);">
+                    <div style="position:absolute;left:50%;top:-14px;width:2px;height:14px;background:var(--line);transform:translateX(-50%);"></div>
+                    <div style="background:var(--surface);border:1px solid var(--border);border-radius:calc(var(--radius) * 0.7);box-shadow:var(--shadow);padding:8px 9px;text-align:center;transition:transform .25s ease, box-shadow .25s ease, border-color .25s ease;" style-hover="transform:translateY(var(--card-lift));box-shadow:var(--card-shadow-hover);border-color:color-mix(in srgb,var(--accent) 38%,var(--border));">
+                      <div style="font:700 11px ui-monospace,monospace;color:var(--accent);">{{ m.date }}</div>
+                      <div style="margin-top:2px;font:700 12.5px/1.3 var(--font);">{{ m.title }}</div>
+                    </div>
+                  </div>
+                </sc-if>
+                <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:13px;height:13px;border-radius:50%;background:var(--surface);border:2px solid var(--accent);box-shadow:0 0 0 3px var(--surface);z-index:2;"></div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="tl-serpentine" style="scroll-margin-top:90px;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;">
+        <div>
+          <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;"><span style="font:700 19px var(--font);letter-spacing:-0.01em;">ㄹ자형</span><span style="font:600 11px ui-monospace,monospace;letter-spacing:.12em;color:var(--muted);">SERPENTINE</span></div>
+          <div style="margin-top:5px;font:600 13px var(--font);color:var(--accent);">프로세스 흐름 · 절차 안내</div>
+        </div>
+        <span style="font:800 34px/1 ui-monospace,monospace;color:color-mix(in srgb, var(--text) 10%, transparent);">03</span>
+      </div>
+      <div style="margin-top:16px;background:var(--surface);border:1px solid var(--border);border-radius:calc(var(--radius) + 5px);padding:clamp(20px,3vw,30px);box-shadow:var(--shadow);">
+        <div style="display:flex;align-items:center;gap:7px;margin:0 0 14px 2px;"><span style="width:6px;height:6px;border-radius:50%;background:var(--accent);"></span><span style="font:700 12px var(--font);color:var(--muted);letter-spacing:.03em;">선 없는 형태 — 카드 지그재그</span></div>
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <sc-for list="{{ serpentine }}" as="row" hint-placeholder-count="2">
+            <div style="display:flex;flex-wrap:wrap;gap:14px;align-items:stretch;flex-direction:{{ row.flow }};">
+              <sc-for list="{{ row.items }}" as="it" hint-placeholder-count="3">
+                <div data-reveal style="flex:1 1 150px;min-width:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:13px 15px;transition:transform .25s ease, box-shadow .25s ease, border-color .25s ease;" style-hover="transform:translateY(var(--card-lift));box-shadow:var(--card-shadow-hover);border-color:color-mix(in srgb,var(--accent) 38%,var(--border));">
+                  <div style="display:flex;align-items:center;gap:9px;">
+                    <span style="flex:0 0 auto;width:26px;height:26px;border-radius:8px;background:color-mix(in srgb,var(--accent) 13%,transparent);color:var(--accent);display:flex;align-items:center;justify-content:center;font:800 12px ui-monospace,monospace;">{{ it.n }}</span>
+                    <span style="font:700 12px ui-monospace,monospace;color:var(--accent);">{{ it.date }}</span>
+                  </div>
+                  <div style="margin-top:9px;font:700 14.5px var(--font);">{{ it.title }}</div>
+                  <div style="margin-top:3px;font:400 12.5px/1.5 var(--font);color:var(--muted);">{{ it.sub }}</div>
+                </div>
+              </sc-for>
+            </div>
+            <sc-if value="{{ row.showTurn }}">
+              <div style="display:flex;justify-content:{{ row.turnJustify }};padding:2px 12px;">
+                <span style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:color-mix(in srgb,var(--accent) 12%,transparent);color:var(--accent);font:800 14px var(--font);line-height:1;">↓</span>
+              </div>
+            </sc-if>
+          </sc-for>
+        </div>
+
+        <div style="height:1px;background:var(--border);margin:24px 0;"></div>
+        <div style="display:flex;align-items:center;gap:7px;margin:0 0 16px 2px;"><span style="width:6px;height:6px;border-radius:50%;background:var(--accent);"></span><span style="font:700 12px var(--font);color:var(--muted);letter-spacing:.03em;">선 연결형 — 라인을 따라 흐름</span></div>
+        <div data-hscroll style="overflow-x:auto;overflow-y:hidden;padding:4px 0;">
+          <div style="position:relative;min-width:520px;">
+            <sc-for list="{{ serpentine }}" as="row" hint-placeholder-count="2">
+              <div data-reveal style="position:relative;height:66px;display:flex;flex-direction:{{ row.flow }};justify-content:space-between;align-items:center;padding:0 34px;">
+                <div style="position:absolute;left:34px;right:34px;top:50%;height:3px;background:var(--line);border-radius:3px;transform:translateY(-50%);z-index:0;"></div>
+                <sc-for list="{{ row.items }}" as="it" hint-placeholder-count="3">
+                  <div style="position:relative;z-index:1;display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:999px;box-shadow:var(--shadow);padding:7px 15px 7px 8px;white-space:nowrap;transition:transform .25s ease, box-shadow .25s ease, border-color .25s ease;" style-hover="transform:translateY(var(--card-lift));box-shadow:var(--card-shadow-hover);border-color:color-mix(in srgb,var(--accent) 38%,var(--border));">
+                    <span style="flex:0 0 auto;width:24px;height:24px;border-radius:50%;background:var(--accent);color:var(--accent-contrast);display:flex;align-items:center;justify-content:center;font:800 11px ui-monospace,monospace;">{{ it.n }}</span>
+                    <span style="font:700 13px var(--font);">{{ it.title }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-for>
+            <sc-for list="{{ serpentine }}" as="row" hint-placeholder-count="2">
+              <sc-if value="{{ row.showTurn }}">
+                <sc-if value="{{ row.turnRight }}" hint-placeholder-val="{{ true }}">
+                  <div style="position:absolute;right:18px;top:{{ row.turnTop }};height:{{ row.turnH }};width:16px;border-top:3px solid var(--line);border-right:3px solid var(--line);border-bottom:3px solid var(--line);border-radius:0 16px 16px 0;z-index:0;"></div>
+                </sc-if>
+                <sc-if value="{{ row.turnLeft }}">
+                  <div style="position:absolute;left:18px;top:{{ row.turnTop }};height:{{ row.turnH }};width:16px;border-top:3px solid var(--line);border-left:3px solid var(--line);border-bottom:3px solid var(--line);border-radius:16px 0 0 16px;z-index:0;"></div>
+                </sc-if>
+              </sc-if>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="tl-roadmap" style="scroll-margin-top:90px;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;">
+        <div>
+          <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;"><span style="font:700 19px var(--font);letter-spacing:-0.01em;">로드맵</span><span style="font:600 11px ui-monospace,monospace;letter-spacing:.12em;color:var(--muted);">ROADMAP</span></div>
+          <div style="margin-top:5px;font:600 13px var(--font);color:var(--accent);">제품 로드맵 · 출시 계획</div>
+        </div>
+        <span style="font:800 34px/1 ui-monospace,monospace;color:color-mix(in srgb, var(--text) 10%, transparent);">04</span>
+      </div>
+      <div style="margin-top:16px;background:var(--surface);border:1px solid var(--border);border-radius:calc(var(--radius) + 5px);padding:clamp(20px,3vw,30px);box-shadow:var(--shadow);">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;">
+          <sc-for list="{{ roadmap }}" as="q" hint-placeholder-count="4">
+            <div data-reveal style="height:100%;">
+              <div style="position:relative;height:100%;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px 17px;display:flex;flex-direction:column;gap:13px;transition:transform .25s ease, box-shadow .25s ease, border-color .25s ease;overflow:hidden;" style-hover="transform:translateY(var(--card-lift));box-shadow:var(--card-shadow-hover);border-color:color-mix(in srgb,var(--accent) 38%,var(--border));">
+                <sc-if value="{{ q.isActive }}"><div style="position:absolute;left:0;top:0;right:0;height:3px;background:var(--accent);"></div></sc-if>
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                  <div style="font:700 16px ui-monospace,monospace;letter-spacing:.02em;">{{ q.q }} <span style="color:var(--muted);font-weight:500;font-size:12px;">{{ q.year }}</span></div>
+                  <sc-if value="{{ q.isActive }}"><span style="display:inline-flex;align-items:center;gap:5px;background:var(--accent);color:var(--accent-contrast);padding:4px 10px;border-radius:999px;font:700 11px var(--font);">진행 중</span></sc-if>
+                  <sc-if value="{{ q.isDone }}"><span style="display:inline-flex;align-items:center;gap:4px;background:color-mix(in srgb,var(--accent) 13%,transparent);color:var(--accent);padding:4px 10px;border-radius:999px;font:700 11px var(--font);">완료</span></sc-if>
+                  <sc-if value="{{ q.isPlanned }}"><span style="display:inline-flex;align-items:center;gap:4px;background:transparent;border:1px solid var(--border);color:var(--muted);padding:4px 10px;border-radius:999px;font:700 11px var(--font);">예정</span></sc-if>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:9px;">
+                  <sc-for list="{{ q.items }}" as="it" hint-placeholder-count="3">
+                    <div style="display:flex;align-items:center;gap:9px;font:500 13.5px var(--font);color:var(--text);">
+                      <span style="flex:0 0 auto;width:6px;height:6px;border-radius:50%;background:var(--accent);"></span>
+                      <span>{{ it }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </section>
+
+    <section id="tl-steps" style="scroll-margin-top:90px;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;">
+        <div>
+          <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;"><span style="font:700 19px var(--font);letter-spacing:-0.01em;">단계 흐름</span><span style="font:600 11px ui-monospace,monospace;letter-spacing:.12em;color:var(--muted);">STEPS</span></div>
+          <div style="margin-top:5px;font:600 13px var(--font);color:var(--accent);">이용 방법 · 온보딩</div>
+        </div>
+        <span style="font:800 34px/1 ui-monospace,monospace;color:color-mix(in srgb, var(--text) 10%, transparent);">05</span>
+      </div>
+      <div style="margin-top:16px;background:var(--surface);border:1px solid var(--border);border-radius:calc(var(--radius) + 5px);padding:clamp(20px,3vw,30px);box-shadow:var(--shadow);">
+        <div style="display:flex;flex-wrap:wrap;gap:14px;">
+          <sc-for list="{{ onboarding }}" as="o" hint-placeholder-count="5">
+            <div data-reveal style="flex:1 1 200px;min-width:185px;position:relative;">
+              <div style="height:100%;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px 17px;display:flex;flex-direction:column;gap:10px;transition:transform .25s ease, box-shadow .25s ease, border-color .25s ease;" style-hover="transform:translateY(var(--card-lift));box-shadow:var(--card-shadow-hover);border-color:color-mix(in srgb,var(--accent) 38%,var(--border));">
+                <div style="display:flex;align-items:center;gap:12px;">
+                  <div style="flex:0 0 auto;width:38px;height:38px;border-radius:11px;background:color-mix(in srgb,var(--accent) 13%,transparent);color:var(--accent);display:flex;align-items:center;justify-content:center;font:800 16px ui-monospace,monospace;">{{ o.n }}</div>
+                  <div style="font:700 15px var(--font);">{{ o.title }}</div>
+                </div>
+                <div style="font:400 13.5px/1.55 var(--font);color:var(--muted);">{{ o.desc }}</div>
+              </div>
+              <sc-if value="{{ o.notLast }}"><div style="position:absolute;right:-11px;top:38px;z-index:2;color:color-mix(in srgb,var(--accent) 65%,var(--muted));font:700 18px var(--font);">›</div></sc-if>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </section>
+
+    <section id="tl-progress" style="scroll-margin-top:90px;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;">
+        <div>
+          <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;"><span style="font:700 19px var(--font);letter-spacing:-0.01em;">진행 상태</span><span style="font:600 11px ui-monospace,monospace;letter-spacing:.12em;color:var(--muted);">PROGRESS</span></div>
+          <div style="margin-top:5px;font:600 13px var(--font);color:var(--accent);">주문 · 배송 추적</div>
+        </div>
+        <span style="font:800 34px/1 ui-monospace,monospace;color:color-mix(in srgb, var(--text) 10%, transparent);">06</span>
+      </div>
+      <div style="margin-top:16px;background:var(--surface);border:1px solid var(--border);border-radius:calc(var(--radius) + 5px);padding:clamp(22px,3vw,34px) clamp(16px,3vw,28px);box-shadow:var(--shadow);">
+        <div style="overflow-x:auto;overflow-y:hidden;padding:8px 0 2px;">
+          <div style="position:relative;display:flex;min-width:560px;">
+            <div style="position:absolute;left:10%;right:10%;top:14px;height:2px;background:var(--line);z-index:0;"></div>
+            <div style="position:absolute;left:10%;top:14px;height:2px;background:var(--accent);width:{{ progressFillWidth }};z-index:0;transition:width .45s cubic-bezier(.4,0,.2,1);"></div>
+            <sc-for list="{{ progress }}" as="step" hint-placeholder-count="5">
+              <button data-idx="{{ step.idx }}" onClick="{{ onPickProgress }}" style="flex:1 1 110px;min-width:110px;background:transparent;border:0;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:11px;padding:0;">
+                <div style="position:relative;z-index:1;width:30px;height:30px;">
+                  <sc-if value="{{ step.done }}"><div style="width:30px;height:30px;border-radius:50%;background:var(--accent);color:var(--accent-contrast);display:flex;align-items:center;justify-content:center;font:700 14px var(--font);box-shadow:0 0 0 4px var(--surface);">✓</div></sc-if>
+                  <sc-if value="{{ step.current }}"><div style="position:relative;width:30px;height:30px;"><span style="position:absolute;inset:0;border-radius:50%;animation:tl-pulse 2s ease-out infinite;"></span><div style="position:relative;width:30px;height:30px;border-radius:50%;background:var(--surface);border:2.5px solid var(--accent);box-shadow:0 0 0 4px var(--surface);display:flex;align-items:center;justify-content:center;"><div style="width:10px;height:10px;border-radius:50%;background:var(--accent);"></div></div></div></sc-if>
+                  <sc-if value="{{ step.future }}"><div style="width:30px;height:30px;border-radius:50%;background:var(--surface);border:2px solid var(--border);box-shadow:0 0 0 4px var(--surface);"></div></sc-if>
+                </div>
+                <div style="text-align:center;font:600 12.5px var(--font);color:var(--text);">{{ step.label }}</div>
+              </button>
+            </sc-for>
+          </div>
+        </div>
+        <div style="margin-top:16px;text-align:center;font:400 13px var(--font);color:var(--muted);">단계를 클릭해 진행 상태를 바꿔보세요</div>
+      </div>
+    </section>
+
+    <section id="tl-changelog" style="scroll-margin-top:90px;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;">
+        <div>
+          <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;"><span style="font:700 19px var(--font);letter-spacing:-0.01em;">변경 로그</span><span style="font:600 11px ui-monospace,monospace;letter-spacing:.12em;color:var(--muted);">CHANGELOG</span></div>
+          <div style="margin-top:5px;font:600 13px var(--font);color:var(--accent);">업데이트 · 릴리스 노트</div>
+        </div>
+        <span style="font:800 34px/1 ui-monospace,monospace;color:color-mix(in srgb, var(--text) 10%, transparent);">07</span>
+      </div>
+      <div style="margin-top:16px;background:var(--surface);border:1px solid var(--border);border-radius:calc(var(--radius) + 5px);padding:clamp(20px,3vw,32px);box-shadow:var(--shadow);">
+        <div style="position:relative;">
+          <div style="position:absolute;left:20px;top:8px;bottom:14px;width:0;border-left:2px var(--line-style) var(--line);"></div>
+          <sc-for list="{{ changelog }}" as="en" hint-placeholder-count="3">
+            <div data-reveal style="position:relative;padding:0 0 22px 52px;">
+              <div style="position:absolute;left:20px;top:3px;transform:translateX(-50%);width:14px;height:14px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 4px var(--surface);"></div>
+              <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;">
+                <span style="font:700 15px ui-monospace,monospace;color:var(--text);">{{ en.version }}</span>
+                <span style="font:500 12px ui-monospace,monospace;color:var(--muted);">{{ en.date }}</span>
+              </div>
+              <div style="margin-top:10px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:4px 16px;transition:box-shadow .25s ease, border-color .25s ease;" style-hover="box-shadow:var(--card-shadow-hover);border-color:color-mix(in srgb,var(--accent) 30%,var(--border));">
+                <sc-for list="{{ en.changes }}" as="c" hint-placeholder-count="3">
+                  <div style="display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-bottom:1px solid color-mix(in srgb,var(--border) 55%,transparent);">
+                    <sc-if value="{{ c.isNew }}" hint-placeholder-val="{{ true }}"><span style="flex:0 0 auto;background:var(--accent);color:var(--accent-contrast);padding:2px 8px;border-radius:6px;font:700 10.5px var(--font);letter-spacing:.03em;">NEW</span></sc-if>
+                    <sc-if value="{{ c.isImprove }}"><span style="flex:0 0 auto;background:color-mix(in srgb, oklch(0.64 0.12 200) 18%, transparent);color:oklch(0.62 0.11 205);padding:2px 8px;border-radius:6px;font:700 10.5px var(--font);">개선</span></sc-if>
+                    <sc-if value="{{ c.isFix }}"><span style="flex:0 0 auto;background:color-mix(in srgb, oklch(0.74 0.13 65) 20%, transparent);color:oklch(0.64 0.12 62);padding:2px 8px;border-radius:6px;font:700 10.5px var(--font);">수정</span></sc-if>
+                    <span style="font:400 13.5px/1.5 var(--font);color:var(--text);padding-top:1px;">{{ c.text }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </section>
+
+    <section id="tl-card" style="scroll-margin-top:90px;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;">
+        <div>
+          <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;"><span style="font:700 19px var(--font);letter-spacing:-0.01em;">카드형</span><span style="font:600 11px ui-monospace,monospace;letter-spacing:.12em;color:var(--muted);">CARDS</span></div>
+          <div style="margin-top:5px;font:600 13px var(--font);color:var(--accent);">커리어 · 이력서</div>
+        </div>
+        <span style="font:800 34px/1 ui-monospace,monospace;color:color-mix(in srgb, var(--text) 10%, transparent);">08</span>
+      </div>
+      <div style="margin-top:16px;background:var(--surface);border:1px solid var(--border);border-radius:calc(var(--radius) + 5px);padding:clamp(20px,3vw,30px) clamp(12px,2vw,20px);box-shadow:var(--shadow);">
+        <div data-hscroll style="overflow-x:auto;overflow-y:hidden;padding-bottom:4px;">
+          <div style="position:relative;display:flex;gap:18px;min-width:min-content;padding-top:30px;">
+            <div style="position:absolute;left:12px;right:12px;top:8px;border-top:2px var(--line-style) var(--line);"></div>
+            <sc-for list="{{ career }}" as="c" hint-placeholder-count="3">
+              <div data-reveal style="position:relative;min-width:252px;max-width:300px;flex:1 1 252px;">
+                <div style="position:absolute;left:50%;top:-22px;transform:translateX(-50%);width:15px;height:15px;border-radius:50%;background:var(--surface);border:2px solid var(--accent);box-shadow:0 0 0 4px var(--surface);display:flex;align-items:center;justify-content:center;"><div style="width:6px;height:6px;border-radius:50%;background:var(--accent);"></div></div>
+                <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px 18px;transition:transform .25s ease, box-shadow .25s ease, border-color .25s ease;" style-hover="transform:translateY(var(--card-lift));box-shadow:var(--card-shadow-hover);border-color:color-mix(in srgb,var(--accent) 38%,var(--border));">
+                  <div style="display:inline-flex;align-items:center;background:color-mix(in srgb,var(--accent) 12%,transparent);color:var(--accent);padding:3px 10px;border-radius:999px;font:700 12px ui-monospace,monospace;">{{ c.period }}</div>
+                  <div style="margin-top:11px;font:700 16px var(--font);letter-spacing:-0.01em;">{{ c.role }}</div>
+                  <div style="margin-top:2px;font:500 13px var(--font);color:var(--muted);">{{ c.org }}</div>
+                  <div style="margin-top:9px;font:400 13.5px/1.55 var(--font);color:var(--text);">{{ c.desc }}</div>
+                  <div style="margin-top:12px;display:flex;flex-wrap:wrap;gap:6px;">
+                    <sc-for list="{{ c.tags }}" as="t" hint-placeholder-count="3">
+                      <span style="background:var(--surface-2);color:var(--muted);padding:3px 9px;border-radius:7px;font:600 11.5px var(--font);">{{ t }}</span>
+                    </sc-for>
+                  </div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer style="max-width:1080px;margin:36px auto 0;padding:24px clamp(14px,4vw,28px) 52px;border-top:1px solid var(--border);color:var(--muted);font:400 13px/1.6 var(--font);">설정은 이 브라우저에 자동 저장됩니다 · 모든 타임라인은 반응형으로 동작합니다 · 호버·스크롤 인터랙션은 설정에서 조절할 수 있어요.</footer>
+
+  <sc-if value="{{ drawerOpen }}"><div onClick="{{ closeDrawer }}" style="position:fixed;inset:0;background:rgba(10,10,18,.38);z-index:40;"></div></sc-if>
+
+  <aside style="position:fixed;top:0;right:0;height:100%;width:min(380px,92vw);background:var(--surface);border-left:1px solid var(--border);z-index:50;box-shadow:-24px 0 60px rgba(8,8,18,.22);transform:{{ drawerTransform }};transition:transform .34s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 18px 14px;border-bottom:1px solid var(--border);">
+      <div style="font:700 17px var(--font);">설정</div>
+      <button onClick="{{ closeDrawer }}" style="border:1px solid var(--border);background:var(--surface);color:var(--muted);width:30px;height:30px;border-radius:8px;cursor:pointer;font:500 16px var(--font);line-height:1;" style-hover="color:var(--text);border-color:var(--muted);">✕</button>
+    </div>
+    <div style="padding:20px 18px;overflow-y:auto;display:flex;flex-direction:column;gap:24px;">
+
+      <div>
+        <div style="font:600 11.5px var(--font);color:var(--muted);letter-spacing:.06em;margin-bottom:10px;">테마 모드</div>
+        <div style="display:flex;gap:4px;background:var(--surface-2);padding:4px;border-radius:12px;">
+          <button data-set="mode" data-val="light" onClick="{{ onPick }}" style="flex:1;position:relative;border:0;background:transparent;padding:9px;border-radius:9px;cursor:pointer;font:600 13px var(--font);color:var(--text);">
+            <sc-if value="{{ is.mLight }}" hint-placeholder-val="{{ true }}"><span style="position:absolute;inset:0;background:var(--surface);border-radius:9px;box-shadow:0 1px 3px rgba(0,0,0,.13);z-index:0;"></span></sc-if><span style="position:relative;z-index:1;">라이트</span>
+          </button>
+          <button data-set="mode" data-val="dark" onClick="{{ onPick }}" style="flex:1;position:relative;border:0;background:transparent;padding:9px;border-radius:9px;cursor:pointer;font:600 13px var(--font);color:var(--text);">
+            <sc-if value="{{ is.mDark }}"><span style="position:absolute;inset:0;background:var(--surface);border-radius:9px;box-shadow:0 1px 3px rgba(0,0,0,.13);z-index:0;"></span></sc-if><span style="position:relative;z-index:1;">다크</span>
+          </button>
+        </div>
+      </div>
+
+      <div>
+        <div style="font:600 11.5px var(--font);color:var(--muted);letter-spacing:.06em;margin-bottom:12px;">강조 색상</div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;">
+          <button data-set="accent" data-val="indigo" onClick="{{ onPick }}" title="인디고" style="width:34px;height:34px;border-radius:50%;border:2px solid var(--border);background:oklch(0.55 0.17 275);cursor:pointer;position:relative;padding:0;"><sc-if value="{{ is.aIndigo }}" hint-placeholder-val="{{ true }}"><span style="position:absolute;inset:-5px;border:2px solid var(--text);border-radius:50%;"></span></sc-if></button>
+          <button data-set="accent" data-val="blue" onClick="{{ onPick }}" title="블루" style="width:34px;height:34px;border-radius:50%;border:2px solid var(--border);background:oklch(0.58 0.15 240);cursor:pointer;position:relative;padding:0;"><sc-if value="{{ is.aBlue }}"><span style="position:absolute;inset:-5px;border:2px solid var(--text);border-radius:50%;"></span></sc-if></button>
+          <button data-set="accent" data-val="emerald" onClick="{{ onPick }}" title="에메랄드" style="width:34px;height:34px;border-radius:50%;border:2px solid var(--border);background:oklch(0.60 0.12 165);cursor:pointer;position:relative;padding:0;"><sc-if value="{{ is.aEmerald }}"><span style="position:absolute;inset:-5px;border:2px solid var(--text);border-radius:50%;"></span></sc-if></button>
+          <button data-set="accent" data-val="terracotta" onClick="{{ onPick }}" title="테라코타" style="width:34px;height:34px;border-radius:50%;border:2px solid var(--border);background:oklch(0.63 0.15 45);cursor:pointer;position:relative;padding:0;"><sc-if value="{{ is.aTerracotta }}"><span style="position:absolute;inset:-5px;border:2px solid var(--text);border-radius:50%;"></span></sc-if></button>
+          <button data-set="accent" data-val="plum" onClick="{{ onPick }}" title="플럼" style="width:34px;height:34px;border-radius:50%;border:2px solid var(--border);background:oklch(0.56 0.16 330);cursor:pointer;position:relative;padding:0;"><sc-if value="{{ is.aPlum }}"><span style="position:absolute;inset:-5px;border:2px solid var(--text);border-radius:50%;"></span></sc-if></button>
+          <button data-set="accent" data-val="amber" onClick="{{ onPick }}" title="앰버" style="width:34px;height:34px;border-radius:50%;border:2px solid var(--border);background:oklch(0.78 0.13 82);cursor:pointer;position:relative;padding:0;"><sc-if value="{{ is.aAmber }}"><span style="position:absolute;inset:-5px;border:2px solid var(--text);border-radius:50%;"></span></sc-if></button>
+        </div>
+      </div>
+
+      <div>
+        <div style="font:600 11.5px var(--font);color:var(--muted);letter-spacing:.06em;margin-bottom:10px;">폰트</div>
+        <div style="display:grid;gap:8px;">
+          <button data-set="font" data-val="noto-sans" onClick="{{ onPick }}" style="position:relative;text-align:left;border:1px solid var(--border);background:var(--surface);padding:11px 13px;border-radius:10px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;font-size:14px;color:var(--text);display:flex;align-items:center;justify-content:space-between;gap:8px;">
+            <span><span style="font-weight:700;">노토 산스</span> <span style="color:var(--muted);font-size:12.5px;">가나다라 ABC</span></span>
+            <sc-if value="{{ is.fSans }}" hint-placeholder-val="{{ true }}"><span style="color:var(--accent);font-weight:700;">✓</span></sc-if>
+          </button>
+          <button data-set="font" data-val="noto-serif" onClick="{{ onPick }}" style="position:relative;text-align:left;border:1px solid var(--border);background:var(--surface);padding:11px 13px;border-radius:10px;cursor:pointer;font-family:'Noto Serif KR',serif;font-size:14px;color:var(--text);display:flex;align-items:center;justify-content:space-between;gap:8px;">
+            <span><span style="font-weight:700;">노토 세리프</span> <span style="color:var(--muted);font-size:12.5px;">가나다라 ABC</span></span>
+            <sc-if value="{{ is.fSerif }}"><span style="color:var(--accent);font-weight:700;">✓</span></sc-if>
+          </button>
+          <button data-set="font" data-val="gothic-a1" onClick="{{ onPick }}" style="position:relative;text-align:left;border:1px solid var(--border);background:var(--surface);padding:11px 13px;border-radius:10px;cursor:pointer;font-family:'Gothic A1',sans-serif;font-size:14px;color:var(--text);display:flex;align-items:center;justify-content:space-between;gap:8px;">
+            <span><span style="font-weight:700;">고딕 A1</span> <span style="color:var(--muted);font-size:12.5px;">가나다라 ABC</span></span>
+            <sc-if value="{{ is.fGothic }}"><span style="color:var(--accent);font-weight:700;">✓</span></sc-if>
+          </button>
+          <button data-set="font" data-val="plex" onClick="{{ onPick }}" style="position:relative;text-align:left;border:1px solid var(--border);background:var(--surface);padding:11px 13px;border-radius:10px;cursor:pointer;font-family:'IBM Plex Sans KR',sans-serif;font-size:14px;color:var(--text);display:flex;align-items:center;justify-content:space-between;gap:8px;">
+            <span><span style="font-weight:700;">IBM Plex</span> <span style="color:var(--muted);font-size:12.5px;">가나다라 ABC</span></span>
+            <sc-if value="{{ is.fPlex }}"><span style="color:var(--accent);font-weight:700;">✓</span></sc-if>
+          </button>
+        </div>
+      </div>
+
+      <div>
+        <div style="font:600 11.5px var(--font);color:var(--muted);letter-spacing:.06em;margin-bottom:10px;">인터랙션</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <button data-set="interaction" data-val="static" onClick="{{ onPick }}" style="position:relative;border:1px solid var(--border);background:var(--surface);padding:10px;border-radius:10px;cursor:pointer;font:600 12.5px var(--font);color:var(--text);overflow:hidden;"><sc-if value="{{ is.iStatic }}"><span style="position:absolute;inset:0;background:color-mix(in srgb,var(--accent) 12%,transparent);border:1.5px solid var(--accent);border-radius:10px;"></span></sc-if><span style="position:relative;z-index:1;">정적</span></button>
+          <button data-set="interaction" data-val="hover" onClick="{{ onPick }}" style="position:relative;border:1px solid var(--border);background:var(--surface);padding:10px;border-radius:10px;cursor:pointer;font:600 12.5px var(--font);color:var(--text);overflow:hidden;"><sc-if value="{{ is.iHover }}"><span style="position:absolute;inset:0;background:color-mix(in srgb,var(--accent) 12%,transparent);border:1.5px solid var(--accent);border-radius:10px;"></span></sc-if><span style="position:relative;z-index:1;">호버 강조</span></button>
+          <button data-set="interaction" data-val="scroll" onClick="{{ onPick }}" style="position:relative;border:1px solid var(--border);background:var(--surface);padding:10px;border-radius:10px;cursor:pointer;font:600 12.5px var(--font);color:var(--text);overflow:hidden;"><sc-if value="{{ is.iScroll }}"><span style="position:absolute;inset:0;background:color-mix(in srgb,var(--accent) 12%,transparent);border:1.5px solid var(--accent);border-radius:10px;"></span></sc-if><span style="position:relative;z-index:1;">스크롤 등장</span></button>
+          <button data-set="interaction" data-val="hover-scroll" onClick="{{ onPick }}" style="position:relative;border:1px solid var(--border);background:var(--surface);padding:10px;border-radius:10px;cursor:pointer;font:600 12.5px var(--font);color:var(--text);overflow:hidden;"><sc-if value="{{ is.iHoverScroll }}" hint-placeholder-val="{{ true }}"><span style="position:absolute;inset:0;background:color-mix(in srgb,var(--accent) 12%,transparent);border:1.5px solid var(--accent);border-radius:10px;"></span></sc-if><span style="position:relative;z-index:1;">호버+스크롤</span></button>
+        </div>
+      </div>
+
+      <div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;"><span style="font:600 11.5px var(--font);color:var(--muted);letter-spacing:.06em;">모서리 둥글기</span><span style="font:600 12px ui-monospace,monospace;color:var(--accent);">{{ radiusVal }}px</span></div>
+        <input type="range" min="0" max="22" step="1" value="{{ radiusVal }}" onInput="{{ onRadius }}" style="width:100%;accent-color:var(--accent);cursor:pointer;" />
+      </div>
+
+      <div>
+        <div style="font:600 11.5px var(--font);color:var(--muted);letter-spacing:.06em;margin-bottom:10px;">연결선 스타일</div>
+        <div style="display:flex;gap:4px;background:var(--surface-2);padding:4px;border-radius:12px;">
+          <button data-set="line" data-val="solid" onClick="{{ onPick }}" style="flex:1;position:relative;border:0;background:transparent;padding:9px;border-radius:9px;cursor:pointer;font:600 13px var(--font);color:var(--text);"><sc-if value="{{ is.lSolid }}" hint-placeholder-val="{{ true }}"><span style="position:absolute;inset:0;background:var(--surface);border-radius:9px;box-shadow:0 1px 3px rgba(0,0,0,.13);z-index:0;"></span></sc-if><span style="position:relative;z-index:1;">실선</span></button>
+          <button data-set="line" data-val="dashed" onClick="{{ onPick }}" style="flex:1;position:relative;border:0;background:transparent;padding:9px;border-radius:9px;cursor:pointer;font:600 13px var(--font);color:var(--text);"><sc-if value="{{ is.lDashed }}"><span style="position:absolute;inset:0;background:var(--surface);border-radius:9px;box-shadow:0 1px 3px rgba(0,0,0,.13);z-index:0;"></span></sc-if><span style="position:relative;z-index:1;">점선</span></button>
+        </div>
+      </div>
+
+    </div>
+    <div style="padding:14px 18px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+      <span style="font:400 12px var(--font);color:var(--muted);">변경 사항은 자동 저장돼요</span>
+      <button onClick="{{ resetSettings }}" style="border:1px solid var(--border);background:var(--surface);color:var(--text);padding:8px 13px;border-radius:9px;cursor:pointer;font:600 12.5px var(--font);" style-hover="border-color:var(--muted);">기본값으로</button>
+    </div>
+  </aside>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  // 색상·폰트 맵 + 타임라인 데이터는 timeline-data.js (window.TLData) 모듈로 분리됨
+  DEFAULTS = { mode:'light', accent:'indigo', font:'noto-sans', interaction:'hover-scroll', radius:14, line:'solid' };
+
+  constructor(props){
+    super(props);
+    let saved=null;
+    try{ saved=JSON.parse(localStorage.getItem('tl-settings')||'null'); }catch(e){}
+    this.state = { settings: Object.assign({}, this.DEFAULTS, saved||{}), drawerOpen:false, progressIndex:2 };
+    this.rootRef = (el)=>{ this.rootEl=el; };
+    this.cfg = (typeof window!=='undefined' && window.TLData) || null;
+    this.tdata = this.cfg ? this.cfg.getData() : null;
+  }
+  componentDidMount(){
+    if(this.cfg){ this.applyAll(this.state.settings); return; }
+    this._dataWait = setInterval(()=>{
+      if(window.TLData){ clearInterval(this._dataWait); this._dataWait=null; this.cfg=window.TLData; this.tdata=window.TLData.getData(); this.forceUpdate(); this.applyAll(this.state.settings); }
+    }, 24);
+  }
+  componentWillUnmount(){ this.teardownReveal(); if(this._dataWait) clearInterval(this._dataWait); }
+
+  teardownReveal(){
+    if(this._scrollHandler){ window.removeEventListener('scroll', this._scrollHandler, true); this._scrollHandler=null; }
+    if(this._resizeHandler){ window.removeEventListener('resize', this._resizeHandler); this._resizeHandler=null; }
+    clearTimeout(this._revealSafety);
+    (this._hscrollers||[]).forEach(sc=>{ if(sc._peekHandler){ sc.removeEventListener('scroll', sc._peekHandler); sc._peekHandler=null; } clearTimeout(sc._peekTimer); });
+  }
+  setHScrollPeek(enabled){
+    const scrollers = this._hscrollers || [];
+    const REST = 0.12;
+    scrollers.forEach(sc=>{
+      const inner = sc.firstElementChild; if(!inner) return;
+      if(sc._peekHandler){ sc.removeEventListener('scroll', sc._peekHandler); sc._peekHandler=null; }
+      clearTimeout(sc._peekTimer);
+      inner.style.transition='opacity .45s ease';
+      const overflow = sc.scrollWidth > sc.clientWidth + 12;
+      if(!enabled || !overflow){ inner.style.opacity='1'; return; }
+      inner.style.opacity = String(REST);
+      const onScroll=()=>{ inner.style.opacity='1'; clearTimeout(sc._peekTimer); sc._peekTimer=setTimeout(()=>{ inner.style.opacity=String(REST); }, 700); };
+      sc._peekHandler=onScroll;
+      sc.addEventListener('scroll', onScroll, { passive:true });
+    });
+  }
+  persist(s){ try{ localStorage.setItem('tl-settings', JSON.stringify(s||this.state.settings)); }catch(e){} }
+  applyFor(next){ this.applyTheme(next); this.ensureFont(next.font); this.applyInteraction(next); this.persist(next); }
+  setSetting(k,v){ const next = Object.assign({}, this.state.settings, { [k]: v }); this.setState({ settings: next }); this.applyFor(next); }
+
+  ensureFont(key){ if(!key||!this.cfg) return; const id='tlfont-'+key; if(document.getElementById(id)) return; const f=this.cfg.FONTS[key]; if(!f) return; const l=document.createElement('link'); l.rel='stylesheet'; l.id=id; l.href=f.href; document.head.appendChild(l); }
+  ensureAllFonts(){ if(!this.cfg) return; Object.keys(this.cfg.FONTS).forEach(k=>this.ensureFont(k)); }
+
+  applyAll(s){ s=s||this.state.settings; this.applyTheme(s); this.ensureFont(s.font); this.applyInteraction(s); this.wireScrollbars(); }
+  wireScrollbars(){
+    const r=this.rootEl; if(!r) return;
+    Array.prototype.slice.call(r.querySelectorAll('[data-hscroll]')).forEach(sc=>{
+      if(sc._barHandler) return;
+      const parent=sc.parentElement; if(!parent) return;
+      if(getComputedStyle(parent).position==='static') parent.style.position='relative';
+      const thumb=document.createElement('div'); thumb.className='tl-sbar'; parent.appendChild(thumb); sc._thumb=thumb;
+      const layout=()=>{
+        const overflow=sc.scrollWidth - sc.clientWidth;
+        if(overflow<=4){ thumb.style.display='none'; return; }
+        thumb.style.display='block';
+        const trackW=sc.clientWidth;
+        const w=Math.max(28, trackW*sc.clientWidth/sc.scrollWidth);
+        const maxLeft=trackW-w;
+        const left=(sc.scrollLeft/overflow)*maxLeft;
+        thumb.style.width=w+'px';
+        thumb.style.left=(sc.offsetLeft+left)+'px';
+        thumb.style.top=(sc.offsetTop+sc.offsetHeight+3)+'px';
+      };
+      const show=()=>{ layout(); if(thumb.style.display==='none') return; thumb.style.opacity='1'; clearTimeout(sc._barTimer); sc._barTimer=setTimeout(()=>{ thumb.style.opacity='0'; }, 650); };
+      sc._barHandler=show;
+      sc.addEventListener('scroll', show, { passive:true });
+      window.addEventListener('resize', ()=>{ if(thumb.style.opacity==='1') layout(); });
+      layout();
+    });
+  }
+
+  applyTheme(s){
+    s=s||this.state.settings; const r=this.rootEl; const C=this.cfg; if(!r||!C) return;
+    const M=C.MODES[s.mode]||C.MODES.light;
+    const A=(s.mode==='dark'?C.ACCENTS_DARK:C.ACCENTS);
+    const acc=A[s.accent]||A.indigo;
+    const set=(k,v)=>r.style.setProperty(k,v);
+    set('--bg',M.bg); set('--surface',M.surface); set('--surface-2',M.surface2);
+    set('--text',M.text); set('--muted',M.muted); set('--border',M.border); set('--line',M.line);
+    set('--shadow',M.shadow); set('--shadow-hover',M.shadowHover);
+    set('--accent',acc.c); set('--accent-contrast',acc.on);
+    set('--radius',(s.radius==null?14:s.radius)+'px');
+    set('--line-style', s.line||'solid');
+    set('--font', (C.FONTS[s.font]||C.FONTS['noto-sans']).family);
+  }
+
+  applyInteraction(s){
+    s=s||this.state.settings; const r=this.rootEl; if(!r) return;
+    const hover = s.interaction==='hover'||s.interaction==='hover-scroll';
+    const scroll = s.interaction==='scroll'||s.interaction==='hover-scroll';
+    r.style.setProperty('--card-lift', hover?'-4px':'0px');
+    r.style.setProperty('--dot-scale-hover', hover?'1.2':'1');
+    r.style.setProperty('--card-shadow-hover', hover?'var(--shadow-hover)':'var(--shadow)');
+    this.teardownReveal();
+    // 내용은 항상 또렷하게 — 가로 스크롤러 콘텐츠에 남아있을 수 있는 흐림(opacity) 제거
+    Array.prototype.slice.call(r.querySelectorAll('[data-hscroll]')).forEach(sc=>{ if(sc.firstElementChild) sc.firstElementChild.style.opacity=''; });
+    const els = Array.prototype.slice.call(r.querySelectorAll('[data-reveal]'));
+    const reveal=(el)=>{ el.style.opacity='1'; el.style.transform='none'; el.dataset.shown='1'; };
+    if(!scroll){ els.forEach(reveal); return; }
+    els.forEach(el=>{ el.dataset.shown=''; el.style.transition='opacity .6s ease, transform .6s cubic-bezier(.2,.7,.2,1)'; el.style.opacity='0'; el.style.transform='translateY(18px)'; });
+    const vh=()=>window.innerHeight||document.documentElement.clientHeight||800;
+    const inView=(el)=>{ const b=el.getBoundingClientRect(); return b.top < vh()*0.94 && b.bottom > 0; };
+    const check=()=>{ els.forEach(el=>{ if(el.dataset.shown!=='1' && inView(el)) reveal(el); }); };
+    requestAnimationFrame(()=>{ check(); requestAnimationFrame(check); });
+    this._scrollHandler=()=>check();
+    window.addEventListener('scroll', this._scrollHandler, true);
+    window.addEventListener('resize', this._scrollHandler);
+    this._revealSafety=setTimeout(()=>{ els.forEach(reveal); }, 2600);
+  }
+
+  openDrawer(){ this.ensureAllFonts(); this.setState({drawerOpen:true}); }
+  closeDrawer(){ this.setState({drawerOpen:false}); }
+  resetSettings(){ const next = Object.assign({}, this.DEFAULTS); this.setState({ settings: next }); this.applyFor(next); }
+  onPick(e){ const d=e.currentTarget.dataset; const v = d.set==='radius'? +d.val : d.val; this.setSetting(d.set, v); }
+  onRadius(e){ this.setSetting('radius', +e.target.value); }
+  onPickProgress(e){ this.setState({ progressIndex: +e.currentTarget.dataset.idx }); }
+
+  renderVals(){
+    const s=this.state.settings;
+    const d=this.tdata||{};
+    const history=d.history||[];
+    const milestones=d.milestones||[];
+    const SERP_PER=3;
+    const serpentine=[];
+    for(let i=0;i<milestones.length;i+=SERP_PER){
+      const reversed=((i/SERP_PER)%2)===1;
+      const chunk=milestones.slice(i,i+SERP_PER).map((m,j)=>Object.assign({},m,{n:String(i+j+1).padStart(2,'0')}));
+      serpentine.push({ items:chunk, reversed, flow: reversed?'row-reverse':'row', showTurn:(i+SERP_PER)<milestones.length, turnJustify: reversed?'flex-start':'flex-end', turnSide: reversed?'left':'right', turnRight: !reversed, turnLeft: reversed });
+    }
+    const serpRowH=66;
+    const serpHeight=(serpentine.length*serpRowH)+'px';
+    serpentine.forEach((row,ri)=>{ row.lineTop=(ri*serpRowH+serpRowH/2)+'px'; row.turnTop=(ri*serpRowH+serpRowH/2)+'px'; row.turnH=serpRowH+'px'; });
+    const brand=d.brand||[];
+    const roadmap=d.roadmap||[];
+    const onboarding=d.onboarding||[];
+    const changelog=d.changelog||[];
+    const career=d.career||[];
+    const progLabels=['주문 완료','결제 확인','상품 준비 중','배송 시작','배송 완료'];
+    const ci=this.state.progressIndex;
+    const progress=progLabels.map((label,i)=>({label, idx:i, done:i<ci, current:i===ci, future:i>ci}));
+    const progressFillWidth=(ci/(progLabels.length-1)*80)+'%';
+    const is={
+      mLight:s.mode==='light', mDark:s.mode==='dark',
+      aIndigo:s.accent==='indigo', aBlue:s.accent==='blue', aEmerald:s.accent==='emerald', aTerracotta:s.accent==='terracotta', aPlum:s.accent==='plum', aAmber:s.accent==='amber',
+      fSans:s.font==='noto-sans', fSerif:s.font==='noto-serif', fGothic:s.font==='gothic-a1', fPlex:s.font==='plex',
+      iStatic:s.interaction==='static', iHover:s.interaction==='hover', iScroll:s.interaction==='scroll', iHoverScroll:s.interaction==='hover-scroll',
+      lSolid:(s.line||'solid')==='solid', lDashed:s.line==='dashed',
+    };
+    return {
+      rootRef:this.rootRef,
+      history, milestones, serpentine, serpHeight, brand, roadmap, onboarding, progress, progressFillWidth, changelog, career,
+      is, radiusVal:(s.radius==null?14:s.radius),
+      drawerOpen:this.state.drawerOpen,
+      drawerTransform:this.state.drawerOpen?'translateX(0)':'translateX(100%)',
+      openDrawer:()=>this.openDrawer(), closeDrawer:()=>this.closeDrawer(), resetSettings:()=>this.resetSettings(),
+      onPick:(e)=>this.onPick(e), onRadius:(e)=>this.onRadius(e), onPickProgress:(e)=>this.onPickProgress(e),
+    };
+  }
+}
+</script>
+</body>
+</html>
