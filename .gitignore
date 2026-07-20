@@ -1,0 +1,47 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# 모노레포 루트 — apps/* 하위의 산출물까지 함께 무시한다.
+
+# dependencies
+node_modules/
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# testing
+coverage/
+
+# build output
+.next/
+out/
+dist/
+build/
+_site/
+
+# env files (can opt-in for committing if needed)
+.env*
+!.env.example
+
+# logs
+*-debug.log*
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# misc
+.DS_Store
+*.pem
+.vercel
+
+# agent collaboration (temporary, not part of the deliverable)
+.agents-ssw/
+
+# 작업용 원본 자료 — 공개 저장소에 올리지 않는다 (레포 밖에 별도 보관)
+**/.ref/

@@ -1,0 +1,554 @@
+/*
+ * 홈 전용 레이아웃과 섹션 시각 규칙입니다.
+ * 전역 토큰을 소비하되 다른 라우트로 규칙이 새지 않도록 CSS Module 경계 안에 둡니다.
+ */
+
+/* 페이지 셸과 공용 콘텐츠 폭 */
+.page {
+  min-height: 100vh;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 85% 8%, var(--accent-soft, rgba(99, 102, 241, 0.14)), transparent 27rem),
+    radial-gradient(circle at 4% 36%, color-mix(in srgb, var(--accent-2, #818cf8) 9%, transparent), transparent 24rem),
+    var(--bg);
+}
+
+.shell {
+  width: min(1180px, calc(100% - 40px));
+  margin-inline: auto;
+}
+
+/* 히어로 소개·행동 버튼 */
+.hero {
+  min-height: min(calc(100vh - 67px), 950px);
+  padding-block: clamp(72px, 12vw, 150px) clamp(88px, 12vw, 148px);
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(280px, 0.65fr);
+  align-items: center;
+  gap: clamp(52px, 8vw, 112px);
+}
+
+.heroCopy {
+  position: relative;
+  z-index: 1;
+}
+
+.eyebrow,
+.sectionLabel {
+  margin: 0;
+  color: var(--accent, #6366f1);
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+}
+
+.heroTitle {
+  max-width: 900px;
+  margin: 24px 0 28px;
+  color: var(--text);
+  font-size: clamp(2.35rem, 5vw, 4.9rem);
+  font-weight: 850;
+  line-height: 1.14 !important;
+  letter-spacing: -0.052em !important;
+  word-break: keep-all;
+}
+
+.heroDescription {
+  max-width: 710px;
+  margin: 0;
+  color: var(--text-dim);
+  font-size: clamp(1rem, 1.5vw, 1.16rem);
+  line-height: 1.85 !important;
+  word-break: keep-all;
+}
+
+.heroActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 40px;
+}
+
+.primaryAction,
+.secondaryAction {
+  min-height: 50px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 0 20px;
+  border-radius: 12px;
+  font-size: 0.92rem;
+  font-weight: 750;
+  text-decoration: none;
+  transition: transform 180ms ease, border-color 180ms ease, background 180ms ease;
+}
+
+.primaryAction {
+  color: var(--accent-contrast, #fff);
+  background: var(--accent, #6366f1);
+  box-shadow: 0 18px 38px -20px var(--accent, #6366f1);
+}
+
+.secondaryAction {
+  color: var(--text);
+  border: 1px solid var(--border-strong);
+  background: color-mix(in srgb, var(--bg-elev) 76%, transparent);
+}
+
+.primaryAction:hover,
+.secondaryAction:hover {
+  transform: translateY(-3px);
+}
+
+.secondaryAction:hover {
+  border-color: var(--accent, #6366f1);
+}
+
+/* 히어로 우측 상태 패널 */
+.heroPanel {
+  position: relative;
+  padding: 24px;
+  border: 1px solid var(--border-strong);
+  border-radius: 22px;
+  background: color-mix(in srgb, var(--bg-elev) 88%, transparent);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(18px);
+}
+
+.heroPanel::before {
+  content: "";
+  position: absolute;
+  inset: 10px;
+  z-index: -1;
+  border: 1px dashed color-mix(in srgb, var(--accent) 28%, var(--border));
+  border-radius: 15px;
+  pointer-events: none;
+}
+
+.panelTop {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  color: var(--text-mute);
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 0.62rem;
+  letter-spacing: 0.09em;
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-dim);
+}
+
+.statusDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 0 4px rgb(34 197 94 / 12%);
+}
+
+.panelStatement {
+  margin: 52px 0 56px;
+  color: var(--text);
+  font-size: clamp(1.45rem, 2.3vw, 2.05rem);
+  font-weight: 800;
+  line-height: 1.35 !important;
+  letter-spacing: -0.035em;
+}
+
+.signalList {
+  margin: 0;
+}
+
+.signalList > div {
+  padding: 13px 0;
+  display: grid;
+  grid-template-columns: 74px 1fr;
+  gap: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.signalList dt,
+.signalList dd {
+  margin: 0;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 0.72rem;
+}
+
+.signalList dt {
+  color: var(--text-mute);
+}
+
+.signalList dd {
+  color: var(--text);
+  text-align: right;
+}
+
+/* 공용 섹션 제목과 소개 영역 */
+.section {
+  padding-block: clamp(82px, 11vw, 140px);
+}
+
+.sectionHeader {
+  max-width: 780px;
+  margin-bottom: clamp(36px, 6vw, 64px);
+}
+
+.sectionHeader h2,
+.researchCopy h2,
+.contact h2 {
+  margin: 14px 0 0;
+  color: var(--text);
+  font-size: clamp(1.8rem, 3.2vw, 3.1rem);
+  font-weight: 820;
+  line-height: 1.22 !important;
+  letter-spacing: -0.04em !important;
+  word-break: keep-all;
+}
+
+.aboutGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  gap: clamp(48px, 9vw, 120px);
+  padding-top: 42px;
+  border-top: 1px solid var(--border-strong);
+}
+
+.aboutLead {
+  margin: 0;
+  color: var(--text);
+  font-size: clamp(1.3rem, 2.2vw, 1.95rem);
+  font-weight: 700;
+  line-height: 1.58 !important;
+  letter-spacing: -0.03em;
+  word-break: keep-all;
+}
+
+.aboutBody {
+  display: grid;
+  gap: 22px;
+}
+
+.aboutBody p {
+  margin: 0;
+  color: var(--text-dim);
+  font-size: 1rem;
+  word-break: keep-all;
+}
+
+/* 집중 분야 카드 그리드 */
+.focusGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.focusCard {
+  min-height: 390px;
+  padding: 26px;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--bg-elev) 88%, transparent);
+  transition: transform 220ms ease, border-color 220ms ease, box-shadow 220ms ease;
+}
+
+.focusCard:hover {
+  transform: translateY(-7px);
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+  box-shadow: var(--shadow);
+}
+
+.cardIndex {
+  color: var(--accent, #6366f1);
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.focusCard h3 {
+  margin: 64px 0 16px;
+  color: var(--text);
+  font-size: 1.35rem;
+  font-weight: 760;
+  line-height: 1.42 !important;
+  word-break: keep-all;
+}
+
+.focusCard p {
+  margin: 0;
+  color: var(--text-dim);
+  font-size: 0.94rem;
+  word-break: keep-all;
+}
+
+.focusCard ul {
+  margin: auto 0 0;
+  padding: 28px 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  list-style: none;
+}
+
+.focusCard li {
+  padding: 6px 9px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text-mute);
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 0.65rem;
+  line-height: 1.35 !important;
+}
+
+/* 연구 철학과 측정 항목 */
+.researchSection {
+  margin-block: clamp(64px, 9vw, 112px);
+  padding: clamp(34px, 6vw, 72px);
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(300px, 0.8fr);
+  gap: clamp(52px, 9vw, 120px);
+  align-items: center;
+  border: 1px solid var(--border-strong);
+  border-radius: 28px;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--accent-soft) 76%, var(--bg-elev)), var(--bg-elev));
+  box-shadow: var(--shadow);
+}
+
+.researchCopy h2 {
+  font-size: clamp(1.8rem, 3vw, 2.8rem);
+}
+
+.researchCopy > p:not(.sectionLabel) {
+  max-width: 650px;
+  margin: 24px 0 0;
+  color: var(--text-dim);
+  word-break: keep-all;
+}
+
+.researchCopy a {
+  margin-top: 30px;
+  display: inline-flex;
+  gap: 12px;
+  color: var(--text);
+  font-size: 0.92rem;
+  font-weight: 750;
+  text-decoration: none;
+}
+
+.researchCopy a:hover {
+  color: var(--accent, #6366f1);
+}
+
+.researchMatrix {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  border-top: 1px solid var(--border-strong);
+  border-left: 1px solid var(--border-strong);
+}
+
+.researchMatrix span {
+  min-height: 76px;
+  display: grid;
+  place-items: center;
+  border-right: 1px solid var(--border-strong);
+  border-bottom: 1px solid var(--border-strong);
+  color: var(--text-dim);
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+/* About 하위 경로 카드 */
+.pathGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.pathCard {
+  min-height: 240px;
+  position: relative;
+  padding: 26px;
+  border: 1px solid var(--border);
+  border-radius: 17px;
+  background: var(--bg-elev);
+  color: inherit;
+  text-decoration: none;
+  transition: transform 200ms ease, border-color 200ms ease;
+}
+
+.pathCard:hover {
+  transform: translateY(-5px);
+  border-color: var(--accent, #6366f1);
+}
+
+.pathLabel {
+  color: var(--accent, #6366f1);
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.pathCard h3 {
+  margin: 42px 0 10px;
+  color: var(--text);
+  font-size: 1.35rem;
+  line-height: 1.42 !important;
+}
+
+.pathCard p {
+  max-width: 420px;
+  margin: 0;
+  color: var(--text-dim);
+  font-size: 0.92rem;
+  word-break: keep-all;
+}
+
+.pathArrow {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  color: var(--text-mute);
+  font-size: 1.1rem;
+}
+
+/* 마지막 연락 유도 영역 */
+.contact {
+  margin-block: clamp(70px, 11vw, 140px);
+  padding-block: clamp(48px, 7vw, 76px);
+  display: grid;
+  grid-template-columns: 0.35fr 1.65fr;
+  gap: 40px;
+  border-top: 1px solid var(--border-strong);
+  border-bottom: 1px solid var(--border-strong);
+}
+
+.contact h2 {
+  max-width: 780px;
+  margin-top: 0;
+}
+
+.contact a {
+  margin-top: 28px;
+  display: inline-block;
+  color: var(--accent, #6366f1);
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: clamp(0.86rem, 1.5vw, 1rem);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.contact a:hover {
+  text-decoration: underline;
+  text-underline-offset: 5px;
+}
+
+/* 태블릿·모바일 반응형 재배치 */
+@media (max-width: 900px) {
+  .hero {
+    grid-template-columns: 1fr;
+    min-height: auto;
+  }
+
+  .heroPanel {
+    max-width: 620px;
+  }
+
+  .focusGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .focusCard {
+    min-height: 300px;
+  }
+
+  .focusCard h3 {
+    margin-top: 40px;
+  }
+
+  .researchSection {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 700px) {
+  .shell {
+    width: min(100% - 30px, 1180px);
+  }
+
+  .hero {
+    padding-top: 78px;
+  }
+
+  .heroTitle br {
+    display: none;
+  }
+
+  .heroActions {
+    flex-direction: column;
+  }
+
+  .primaryAction,
+  .secondaryAction {
+    width: 100%;
+  }
+
+  .aboutGrid,
+  .contact {
+    grid-template-columns: 1fr;
+    gap: 30px;
+  }
+
+  .pathGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .researchSection {
+    width: min(100% - 30px, 1180px);
+    padding: 28px 20px;
+    border-radius: 20px;
+  }
+
+  .heroTitle {
+    font-size: clamp(1.9rem, 8vw, 2.35rem);
+    line-height: 1.2 !important;
+    letter-spacing: -0.045em !important;
+  }
+
+  .sectionHeader h2,
+  .researchCopy h2,
+  .contact h2 {
+    font-size: clamp(1.5rem, 6.2vw, 1.8rem);
+  }
+
+  .aboutLead {
+    font-size: clamp(1.15rem, 4.9vw, 1.3rem);
+    line-height: 1.58 !important;
+  }
+
+  .panelStatement {
+    margin: 34px 0 38px;
+    font-size: 1.4rem;
+    line-height: 1.4 !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :global(:root:not([data-motion="on"])) .primaryAction,
+  :global(:root:not([data-motion="on"])) .secondaryAction,
+  :global(:root:not([data-motion="on"])) .focusCard,
+  :global(:root:not([data-motion="on"])) .pathCard {
+    transition: none;
+  }
+}

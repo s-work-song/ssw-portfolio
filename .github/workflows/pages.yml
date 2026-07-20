@@ -1,0 +1,69 @@
+# 진입 페이지(web)를 정적 export 해서 GitHub Pages에 배포한다.
+#
+# 배포 구조 (사이트 루트 = /ssw-portfolio/)
+#   /            → web 빌드 산출물 (포트폴리오)
+#   /<앱이름>/   → sample-apps 하위 웹 앱을 추가할 자리
+#
+# 웹 샘플 앱을 추가할 때는 build 잡에 빌드 + _site 복사 단계를 한 쌍 더 넣고,
+# 해당 앱의 base 경로를 /ssw-portfolio/<앱이름>/ 으로 맞추면 된다.
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [dev]
+    # 웹과 무관한 변경으로는 재배포하지 않는다.
+    paths-ignore:
+      - "services/**"
+      - "sample-apps/dotnet-wpf-app/**"
+      - "sample-apps/kotlin-android-app/**"
+  workflow_dispatch:
+
+# Pages 배포에 필요한 최소 권한만 부여한다.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 배포가 겹칠 때 최신 것만 살리되, 진행 중인 배포는 끊지 않는다.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      # 프로젝트 페이지의 하위 경로. next.config.ts가 basePath로 사용한다.
+      NEXT_PUBLIC_BASE_PATH: /ssw-portfolio
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: 의존성 설치
+        run: npm ci
+
+      - name: web 정적 export
+        run: npm run build -w web
+
+      - name: 배포 산출물 모으기
+        run: |
+          mkdir -p _site
+          cp -r web/out/. _site/
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

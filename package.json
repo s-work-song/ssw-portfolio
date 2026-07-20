@@ -1,0 +1,17 @@
+{
+  "name": "ssw-portfolio",
+  "private": true,
+  "version": "0.0.0",
+  "description": "SW Song 모노레포 — 진입 페이지는 web/, 샘플 앱은 sample-apps/, 백엔드는 services/",
+  "workspaces": [
+    "web",
+    "sample-apps/*",
+    "services/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w web --",
+    "build": "npm run build -w web",
+    "lint": "npm run lint -w web"
+  }
+}
