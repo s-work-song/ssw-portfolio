@@ -192,7 +192,7 @@ export default function SettingsPage() {
                 <polyline points="12 19 5 12 12 5" />
               </svg>
             </span>
-            SW Song
+            송상운
           </Link>
           <span
             style={{

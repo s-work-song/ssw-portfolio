@@ -11,7 +11,7 @@ import { aboutDestinations } from '@/data/about';
 
 export const metadata = {
   title: '소개 | Overview',
-  description: 'SW Song 개인 포트폴리오 소개 및 각 섹션 안내',
+  description: '송상운 개인 포트폴리오 소개 및 각 섹션 안내',
 };
 
 export default function OverviewPage() {
@@ -32,7 +32,7 @@ export default function OverviewPage() {
         <AboutDecorativeGrid />
         <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <h2 style={{ fontSize: 'clamp(1.5rem, 5vw, 2.25rem)', fontWeight: 800, margin: 0, color: 'var(--text)', lineHeight: 1.2 }}>
-            안녕하세요, SW Song입니다.
+            안녕하세요, 송상운입니다.
           </h2>
           <p style={{
             margin: 0,

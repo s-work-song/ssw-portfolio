@@ -151,7 +151,7 @@ export default function Header({ navItems }: HeaderProps) {
               }}
             >
               <span style={{ fontWeight: 800, fontSize: "16px", letterSpacing: "-.01em" }}>
-                SW <span style={{ color: "var(--text-dim)", fontWeight: 600 }}>Song</span>
+                송<span style={{ color: "var(--text-dim)", fontWeight: 600 }}>상운</span>
               </span>
               <span
                 style={{

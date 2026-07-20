@@ -16,7 +16,7 @@ export const aboutDestinations: AboutDestination[] = [
   {
     title: '이력서 (Resume)',
     href: '/about-me/resume',
-    desc: 'SW Song의 직무 전문성, 실무 경력(라이트소프트, 큐브에이, 너울정보 등) 및 핵심 기술 스택을 정리한 공식 이력서입니다.',
+    desc: '송상운의 직무 전문성, 실무 경력(라이트소프트, 큐브에이, 너울정보 등) 및 핵심 기술 스택을 정리한 공식 이력서입니다.',
     emoji: '📄',
     linkText: '이력서 확인하기 →',
   },

@@ -61,11 +61,13 @@ export const workExperiences: WorkExperience[] = [
   },
 ];
 
+// 첫 번째 그룹이 이력서에서 가장 먼저 읽히므로, 개별 기술 이름이 아니라
+// 일하는 방식과 설계 관점을 앞세운다.
 export const skillGroups: SkillGroup[] = [
-  { title: 'Languages', skills: ['C#', 'Java', 'C++', 'JavaScript', 'Kotlin'] },
-  { title: 'Frameworks · Platforms', skills: ['.NET / BCL', 'WPF', 'Unity', 'Spring', 'Vue.js'] },
-  { title: 'Optimization · Tools', skills: ['BenchmarkDotNet', 'AVX2', 'CUDA', 'Protobuf', 'ZSTD'] },
-  { title: 'Practices', skills: ['OOP', 'MVVM', 'DDD', 'DevOps', 'Profiling'] },
+  { title: 'Core Competencies', skills: ['OOP / SOLID', 'DevOps', 'Profiling', 'AI 에이전트 오케스트레이션'] },
+  { title: 'Languages', skills: ['C#', 'Java', 'JavaScript'] },
+  { title: 'Frameworks · Platforms', skills: ['.NET / BCL', 'WPF', 'Unity', 'Spring'] },
+  { title: 'Optimization · Tools', skills: ['BenchmarkDotNet', 'xUnit', 'SIMD / AVX2', 'Protobuf', 'ZSTD'] },
 ];
 
 export const educationItems: ResumeFact[] = [

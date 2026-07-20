@@ -64,7 +64,7 @@ export default function Footer() {
               >
                 S
               </span>
-              SW Song
+              송상운
             </Link>
             <p
               style={{
@@ -123,7 +123,7 @@ export default function Footer() {
             fontSize: "11px",
           }}
         >
-          <span>© 2026 SW Song</span>
+          <span>© 2026 송상운</span>
           <a
             className="hover-footer-link"
             href="mailto:sworksong@gmail.com"

@@ -17,11 +17,11 @@ const SHOW_FLOATING_MENU = false;
 
 export const metadata: Metadata = {
   title: {
-    default: "SW Song | Software Engineer",
-    template: "%s | SW Song",
+    default: "송상운 | Software Engineer",
+    template: "%s | 송상운",
   },
   description:
-    "컴퓨팅 스택의 원리를 탐구하고 측정 가능한 개선을 제품으로 연결하는 소프트웨어 엔지니어 SW Song의 포트폴리오입니다.",
+    "컴퓨팅 스택의 원리를 탐구하고 측정 가능한 개선을 제품으로 연결하는 소프트웨어 엔지니어 송상운의 포트폴리오입니다.",
 };
 
 export default function RootLayout({

@@ -17,7 +17,7 @@ import {
 
 export const metadata = {
   title: '이력서 | Resume',
-  description: 'SW Song 개인 이력서 및 경력 사항',
+  description: '송상운 개인 이력서 및 경력 사항',
 };
 
 export default function ResumePage() {
@@ -40,7 +40,7 @@ export default function ResumePage() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
             <div>
               <h2 style={{ fontSize: 'clamp(1.5rem, 5vw, 2.25rem)', fontWeight: 800, margin: 0, color: 'var(--text)' }}>
-                SW Song
+                송상운
               </h2>
               <p style={{ fontSize: 'clamp(1rem, 3vw, 1.125rem)', fontWeight: 600, color: 'var(--accent, #6366f1)', margin: '8px 0 0' }}>
                 Software Engineer
