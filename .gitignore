@@ -42,3 +42,6 @@ next-env.d.ts
 
 # agent collaboration (temporary, not part of the deliverable)
 .agents-ssw/
+
+# 작업용 원본 자료 — 공개 저장소에 올리지 않는다 (레포 밖에 별도 보관)
+**/.ref/
