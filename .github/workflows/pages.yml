@@ -1,0 +1,63 @@
+# 모노레포의 앱들을 빌드해 GitHub Pages 한 사이트로 합쳐 배포한다.
+#
+# 배포 구조 (사이트 루트 = /ssw-portfolio/)
+#   /                → 루트 index.html (앱 목록 랜딩)
+#   /hello-react/    → apps/hello-react 빌드 산출물
+#
+# 앱을 추가할 때는 build 잡에 빌드 + _site 복사 단계를 한 쌍 더 넣고,
+# 해당 앱의 base 경로를 /ssw-portfolio/<앱이름>/ 으로 맞추면 된다.
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [dev]
+  workflow_dispatch:
+
+# Pages 배포에 필요한 최소 권한만 부여한다.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 배포가 겹칠 때 최신 것만 살리되, 진행 중인 배포는 끊지 않는다.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: 의존성 설치
+        run: npm ci
+
+      - name: hello-react 빌드
+        run: npm run build -w hello-react
+
+      - name: 배포 산출물 모으기
+        run: |
+          mkdir -p _site
+          cp index.html _site/index.html
+          mkdir -p _site/hello-react
+          cp -r apps/hello-react/dist/. _site/hello-react/
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
