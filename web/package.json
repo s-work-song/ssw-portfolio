@@ -1,8 +1,8 @@
 {
-  "name": "portfolio",
+  "name": "web",
   "version": "0.1.0",
   "private": true,
-  "description": "SW Song 개인 포트폴리오 (Next.js)",
+  "description": "SW Song 포트폴리오 진입 페이지 (Next.js, 정적 export)",
   "scripts": {
     "build": "node scripts/generate-posts.mjs && next build",
     "dev": "node scripts/generate-posts.mjs && next dev",
