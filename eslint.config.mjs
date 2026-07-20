@@ -13,7 +13,6 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
     // Generated or archived reference assets are not application source.
-    "worker-configuration.d.ts",
     "docs/prototypes/**",
   ]),
 ]);
