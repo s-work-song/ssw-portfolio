@@ -64,7 +64,13 @@ function CustomThemeProvider({ children }: { children: React.ReactNode }) {
       if (s) {
         const parsed = JSON.parse(s);
         if (parsed.accent) setAccentState(parsed.accent);
-        if (parsed.motion === "system" || parsed.motion === "on" || parsed.motion === "off") {
+        // motion은 v2 스키마부터 신뢰한다. 버전 없는 블롭은 기본값이 "시스템 따름"이던
+        // 구 사이트의 자동 저장이라 사용자의 명시적 선택으로 보지 않고, 새 기본값
+        // "항상 켬"을 유지한 채 마이그레이션한다 (2026-07-27 결정).
+        if (
+          parsed.v === 2 &&
+          (parsed.motion === "system" || parsed.motion === "on" || parsed.motion === "off")
+        ) {
           setMotionState(parsed.motion);
         }
         if (parsed.fabAnim) setFabAnimState(parsed.fabAnim);
@@ -97,7 +103,7 @@ function CustomThemeProvider({ children }: { children: React.ReactNode }) {
     try {
       localStorage.setItem(
         "swork-theme-custom",
-        JSON.stringify({ accent, motion, fabAnim, glow })
+        JSON.stringify({ v: 2, accent, motion, fabAnim, glow })
       );
     } catch (e) {
       console.error("Failed to save custom theme to localStorage", e);
