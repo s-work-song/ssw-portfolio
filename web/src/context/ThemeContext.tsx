@@ -42,7 +42,9 @@ function CustomThemeProvider({ children }: { children: React.ReactNode }) {
   const { setTheme } = useNextTheme();
   const [mode, setModeState] = useState<Mode>("system");
   const [accent, setAccentState] = useState<Accent>("indigo");
-  const [motion, setMotionState] = useState<MotionPreference>("system");
+  // 기본값 "항상 켬": OS 모션 줄이기와 무관하게 사이트 연출을 보여주고,
+  // 원치 않는 방문자가 설정에서 시스템 따름/끔을 선택한다 (2026-07-27 결정).
+  const [motion, setMotionState] = useState<MotionPreference>("on");
   const [fabAnim, setFabAnimState] = useState<FabAnim>("rise");
   const [glow, setGlowState] = useState<boolean>(true);
   const [mounted, setMounted] = useState(false);
@@ -115,7 +117,7 @@ function CustomThemeProvider({ children }: { children: React.ReactNode }) {
     setModeState("system");
     setTheme("system");
     setAccentState("indigo");
-    setMotionState("system");
+    setMotionState("on");
     setFabAnimState("rise");
     setGlowState(true);
   };

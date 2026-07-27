@@ -826,34 +826,36 @@
   }
 }
 
+/* 사이트 모션 정책(globals.css)과 같은 관례: 사용자가 "항상 켬"(data-motion="on")을
+   고르면 OS 모션 줄이기보다 사용자 선택을 우선한다. */
 @media (prefers-reduced-motion: reduce) {
-  .loading::before {
+  :global(:root:not([data-motion="on"])) .loading::before {
     animation: none;
   }
 
-  .backdrop,
-  .panel,
-  .backdropClosing,
-  .panelClosing,
-  .panelSlide,
-  .panelSlide.panelClosing {
+  :global(:root:not([data-motion="on"])) .backdrop,
+  :global(:root:not([data-motion="on"])) .panel,
+  :global(:root:not([data-motion="on"])) .backdropClosing,
+  :global(:root:not([data-motion="on"])) .panelClosing,
+  :global(:root:not([data-motion="on"])) .panelSlide,
+  :global(:root:not([data-motion="on"])) .panelSlide.panelClosing {
     animation-duration: 0.01ms;
   }
 
   /* 실제 판정은 React가 하지만, 반복 재생만은 CSS에서도 확실히 멈춘다. */
-  .streamCursor,
-  .streamBlockCursor,
-  .streamSkeleton {
+  :global(:root:not([data-motion="on"])) .streamCursor,
+  :global(:root:not([data-motion="on"])) .streamBlockCursor,
+  :global(:root:not([data-motion="on"])) .streamSkeleton {
     animation: none;
   }
 
-  .streamWordFade,
-  .streamBlurFocus,
-  .streamSlideUp,
-  .streamTokenChunk,
-  .streamMaskWipe,
-  .streamLetterDrop,
-  .streamHighlightTrail {
+  :global(:root:not([data-motion="on"])) .streamWordFade,
+  :global(:root:not([data-motion="on"])) .streamBlurFocus,
+  :global(:root:not([data-motion="on"])) .streamSlideUp,
+  :global(:root:not([data-motion="on"])) .streamTokenChunk,
+  :global(:root:not([data-motion="on"])) .streamMaskWipe,
+  :global(:root:not([data-motion="on"])) .streamLetterDrop,
+  :global(:root:not([data-motion="on"])) .streamHighlightTrail {
     animation-duration: 0.01ms;
   }
 }

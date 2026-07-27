@@ -328,7 +328,7 @@ export default function SettingsPage() {
               </button>
             </div>
             <div style={{ marginTop: "11px", fontSize: "12.5px", color: "var(--text-mute)", lineHeight: 1.55 }}>
-              기본값인 시스템 따름은 운영체제의 모션 줄이기 설정을 존중합니다.
+              기본값은 항상 켬입니다. 시스템 따름을 선택하면 운영체제의 모션 줄이기 설정을 존중합니다.
             </div>
           </section>
 
