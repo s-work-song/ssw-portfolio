@@ -1,0 +1,13 @@
+<Project>
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseArtifactsOutput>true</UseArtifactsOutput>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(IsBenchmarkProject)' == 'true'">
+    <Compile Include="$(MSBuildThisFileDirectory)Shared\Benchmarking\SharedBenchmarkConfig.cs"
+             Link="Shared\Benchmarking\SharedBenchmarkConfig.cs" />
+  </ItemGroup>
+</Project>
