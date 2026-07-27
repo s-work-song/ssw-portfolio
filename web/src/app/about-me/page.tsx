@@ -19,14 +19,15 @@ export default function OverviewPage() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '48px' }}>
       
       {/* Intro Hero Section */}
-      <AboutPanel style={{
+      <AboutPanel id="portfolio-overview" tabIndex={-1} style={{
         padding: 'clamp(20px, 5vw, 40px)',
         borderRadius: '24px',
         display: 'flex',
         flexDirection: 'column',
         gap: '16px',
         position: 'relative',
-        overflow: 'hidden'
+        overflow: 'hidden',
+        scrollMarginTop: '96px'
       }}>
         {/* Subtle grid background watermark */}
         <AboutDecorativeGrid />

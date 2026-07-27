@@ -51,7 +51,7 @@ export default function CoverLetterPage() {
       </section>
 
       {/* Narrative Section (based on the markdown) */}
-      <section style={{
+      <section id="cover-letter-story" tabIndex={-1} style={{
         padding: 'clamp(26px, 5vw, 40px) clamp(18px, 4vw, 32px)',
         background: 'var(--bg-elev)',
         borderRadius: '24px',
@@ -61,7 +61,8 @@ export default function CoverLetterPage() {
         flexDirection: 'column',
         gap: '40px',
         position: 'relative',
-        overflow: 'hidden'
+        overflow: 'hidden',
+        scrollMarginTop: '96px'
       }}>
         {/* Subtle grid background watermark */}
         <div style={{

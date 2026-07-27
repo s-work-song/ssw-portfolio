@@ -84,7 +84,12 @@ export default function ResumePage() {
       </AboutPanel>
 
       {/* Main Layout Grid */}
-      <div className="about-grid">
+      <div
+        id="resume-experience-skills"
+        className="about-grid"
+        tabIndex={-1}
+        style={{ scrollMarginTop: '96px' }}
+      >
         
         {/* Left Column: Experience & Research */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>

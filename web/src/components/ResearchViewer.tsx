@@ -16,7 +16,11 @@ export default function ResearchViewer() {
   const { activeTab, selectTab } = useResearchTabs();
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+    <div
+      id="research-experiments"
+      tabIndex={-1}
+      style={{ display: 'flex', flexDirection: 'column', gap: '32px', scrollMarginTop: '96px' }}
+    >
       <ResearchTabs tabs={researchTabs} activeTab={activeTab} onSelect={selectTab} />
 
       <div

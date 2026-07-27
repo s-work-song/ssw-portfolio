@@ -834,6 +834,15 @@ code {
   color: var(--text) !important;
 }
 
+/* 탭 스크롤 영역과 설정 진입점을 한 줄에 묶는다 */
+.about-header-nav-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  min-width: 0;
+}
+
 .about-header-nav {
   display: flex;
   gap: 6px;
@@ -859,6 +868,29 @@ code {
   display: none;
 }
 
+/* /settings 진입점: 탭 스크롤 밖에 고정해 좁은 화면에서도 항상 노출한다 */
+.about-settings-link {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  color: var(--text-dim);
+  text-decoration: none;
+  border: 1px solid transparent;
+  transition: all 0.2s cubic-bezier(0.23, 1.0, 0.32, 1);
+}
+
+.about-settings-link:hover {
+  color: var(--text);
+  background-color: var(--bg-elev);
+  border-color: var(--border);
+  transform: translateY(-1.5px);
+  box-shadow: 0 4px 14px -3px rgba(0, 0, 0, 0.12);
+}
+
 /* About 모바일 세부 조정 */
 @media (max-width: 768px) {
   .about-me-container {
@@ -882,6 +914,10 @@ code {
     gap: 14px !important;
   }
   
+  .about-header-nav-row {
+    width: 100%;
+  }
+
   .about-header-nav {
     width: 100%;
   }
