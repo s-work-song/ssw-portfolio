@@ -94,23 +94,15 @@ test("실제 knowledge 계약으로 12개 문서를 색인하고 persona 정책�
   }
 
   const actual = await loadKnowledge(knowledgeDir);
-  assert.deepEqual(
-    actual.documents.map(({ source }) => source),
-    [
-      "ai-tools-and-costs.md",
-      "education-and-credentials.md",
-      "employment-preferences.md",
-      "faq.md",
-      "profile.md",
-      "projects/ai-agent-orchestration.md",
-      "projects/portfolio-rag-chatbot.md",
-      "retrospectives/ai-orchestration.md",
-      "retrospectives/career-gap-game-development.md",
-      "retrospectives/health-and-workflow-transition.md",
-      "retrospectives/simd-avx2-optimization.md",
-      "services.md",
-    ],
-  );
   assert.equal(actual.documents.length, 12);
+  for (const document of actual.documents) {
+    assert.equal(document.attributes.index, true, `${document.source}: index:true가 아니다`);
+    assert.ok(typeof document.id === "string" && document.id.trim(), `${document.source}: id 누락`);
+    assert.ok(typeof document.title === "string" && document.title.trim(), `${document.source}: title 누락`);
+    assert.ok(typeof document.type === "string" && document.type.trim(), `${document.source}: type 누락`);
+    assert.ok(document.chunkCount > 0, `${document.source}: chunk가 생성되지 않았다`);
+  }
+  const uniqueIds = new Set(actual.documents.map(({ id }) => id));
+  assert.equal(uniqueIds.size, actual.documents.length, "문서 id가 중복되어서는 안 된다");
   assert.match(actual.persona, /불법 행위의 실행, 은폐 또는 탐지 회피/);
 });
