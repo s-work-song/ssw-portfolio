@@ -8,6 +8,13 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useTheme, ACCENTS, Accent, FabAnim } from "../../context/ThemeContext";
+import {
+  CHAT_ANIMATION_OPTIONS,
+  CHAT_STREAM_ANIMATION_OPTIONS,
+  DEFAULT_CHAT_ANIMATION,
+  DEFAULT_CHAT_STREAM_ANIMATION,
+  useChat,
+} from "../../features/chat";
 
 export default function SettingsPage() {
   const {
@@ -23,6 +30,14 @@ export default function SettingsPage() {
     setGlow,
     resetTheme,
   } = useTheme();
+  const {
+    streamingEnabled,
+    setStreamingEnabled,
+    chatAnimation,
+    setChatAnimation,
+    streamAnimation,
+    setStreamAnimation,
+  } = useChat();
 
   // 미리보기 전용 상태이며 실제 전역 FAB의 열림 상태와는 의도적으로 분리합니다.
   const [prevRender, setPrevRender] = useState(false);
@@ -79,6 +94,13 @@ export default function SettingsPage() {
 
   const handleReplay = () => {
     setCycleKey((k) => k + 1);
+  };
+
+  const resetAllSettings = () => {
+    resetTheme();
+    setStreamingEnabled(true);
+    setChatAnimation(DEFAULT_CHAT_ANIMATION);
+    setStreamAnimation(DEFAULT_CHAT_STREAM_ANIMATION);
   };
 
   const getSegBtnStyle = (active: boolean): React.CSSProperties => {
@@ -222,7 +244,7 @@ export default function SettingsPage() {
           </div>
           <h1 style={{ margin: "0 0 12px", fontSize: "clamp(28px, 4.4vw, 40px)", fontWeight: 800, letterSpacing: "-.02em" }}>사이트 설정</h1>
           <p style={{ margin: 0, fontSize: "15px", lineHeight: 1.7, color: "var(--text-dim)", maxWidth: "560px" }}>
-            테마와 플로팅 버튼 동작을 원하는 대로 맞춰보세요. 변경 사항은 즉시 저장되어 사이트 전체에 적용됩니다.
+            테마, 플로팅 버튼과 챗봇 응답 방식을 맞춰보세요. 변경 사항은 즉시 저장되어 사이트 전체에 적용됩니다.
           </p>
         </div>
 
@@ -306,7 +328,7 @@ export default function SettingsPage() {
               </button>
             </div>
             <div style={{ marginTop: "11px", fontSize: "12.5px", color: "var(--text-mute)", lineHeight: 1.55 }}>
-              기본값인 시스템 따름은 운영체제의 모션 줄이기 설정을 존중합니다.
+              기본값은 항상 켬입니다. 시스템 따름을 선택하면 운영체제의 모션 줄이기 설정을 존중합니다.
             </div>
           </section>
 
@@ -539,6 +561,162 @@ export default function SettingsPage() {
             </div>
           </section>
 
+          {/* Chat response */}
+          <section style={{ background: "var(--bg-elev)", border: "1px solid var(--border)", borderRadius: "18px", padding: "clamp(20px, 3vw, 28px)" }}>
+            <div id="chat-response-title" style={{ fontSize: "16px", fontWeight: 700, marginBottom: "4px" }}>
+              챗봇 응답
+            </div>
+            <div id="chat-streaming-description" style={{ fontSize: "13.5px", color: "var(--text-mute)", marginBottom: "18px", lineHeight: 1.6 }}>
+              응답 스트리밍을 켜면 생성되는 내용을 바로 표시하고, 끄면 완성된 답변을 한 번에 표시합니다.
+            </div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "14px", padding: "14px 16px", borderRadius: "13px", background: "var(--bg-elev-2)", border: "1px solid var(--border)" }}>
+              <div>
+                <div style={{ fontSize: "14.5px", fontWeight: 600 }}>응답 스트리밍</div>
+                <div style={{ fontSize: "12.5px", color: "var(--text-mute)", marginTop: "2px" }}>
+                  {streamingEnabled ? "생성되는 내용을 바로 표시" : "완성 후 한 번에 표시"}
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setStreamingEnabled(!streamingEnabled)}
+                role="switch"
+                aria-checked={streamingEnabled}
+                aria-labelledby="chat-response-title"
+                aria-describedby="chat-streaming-description"
+                style={{
+                  width: "48px",
+                  height: "27px",
+                  borderRadius: "999px",
+                  position: "relative",
+                  cursor: "pointer",
+                  transition: "background .2s",
+                  border: "1px solid var(--border-strong)",
+                  flexShrink: 0,
+                  background: streamingEnabled ? "var(--accent, #6366f1)" : "var(--bg-elev)",
+                }}
+              >
+                <span
+                  aria-hidden="true"
+                  style={{
+                    position: "absolute",
+                    top: "2px",
+                    left: "2px",
+                    width: "21px",
+                    height: "21px",
+                    borderRadius: "50%",
+                    background: "#fff",
+                    boxShadow: "0 1px 3px rgba(0,0,0,.3)",
+                    transition: "transform .2s",
+                    transform: streamingEnabled ? "translateX(21px)" : "none",
+                  }}
+                />
+              </button>
+            </div>
+          </section>
+
+          {/* 응답 텍스트 애니메이션 */}
+          <section style={{ background: "var(--bg-elev)", border: "1px solid var(--border)", borderRadius: "18px", padding: "clamp(20px, 3vw, 28px)" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", marginBottom: "4px" }}>
+              <span id="stream-animation-title" style={{ fontSize: "16px", fontWeight: 700 }}>응답 텍스트 애니메이션</span>
+              <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "12.5px", color: "var(--accent, #6366f1)", whiteSpace: "nowrap" }}>
+                {CHAT_STREAM_ANIMATION_OPTIONS.find((option) => option.value === streamAnimation)?.label || "단어 페이드"}
+              </span>
+            </div>
+            <div id="stream-animation-description" style={{ fontSize: "13.5px", color: "var(--text-mute)", marginBottom: "18px", lineHeight: 1.6 }}>
+              답변이 생성되며 도착하는 글자에 입히는 효과예요. PC와 모바일 모두에 적용됩니다.
+            </div>
+            <div
+              style={{
+                opacity: streamingEnabled ? 1 : 0.5,
+                transition: "opacity .2s",
+              }}
+            >
+              <div
+                role="radiogroup"
+                aria-label="응답 텍스트 애니메이션"
+                aria-describedby="stream-animation-description"
+                style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(190px, 1fr))", gap: "10px" }}
+              >
+                {CHAT_STREAM_ANIMATION_OPTIONS.map((option) => {
+                  const active = streamAnimation === option.value;
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => setStreamAnimation(option.value)}
+                      role="radio"
+                      aria-checked={active}
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "7px",
+                        textAlign: "left",
+                        padding: "14px 15px",
+                        borderRadius: "13px",
+                        cursor: "pointer",
+                        transition: "background .2s, border-color .2s",
+                        background: active ? "var(--accent-soft, rgba(99,102,241,.14))" : "var(--bg-elev-2)",
+                        border: active ? "1.5px solid var(--accent, #6366f1)" : "1.5px solid var(--border)",
+                      }}
+                    >
+                      <span style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", width: "100%" }}>
+                        <span style={{ fontSize: "14.5px", fontWeight: 700 }}>{option.label}</span>
+                        {active && (
+                          <span style={{ width: "18px", height: "18px", borderRadius: "50%", background: "var(--accent, #6366f1)", color: "var(--accent-contrast, #fff)", display: "grid", placeItems: "center", flexShrink: 0 }}>
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="20 6 9 17 4 12" />
+                            </svg>
+                          </span>
+                        )}
+                      </span>
+                      <span style={{ fontSize: "12px", color: "var(--text-mute)", lineHeight: 1.45 }}>{option.description}</span>
+                    </button>
+                  );
+                })}
+              </div>
+              <div style={{ marginTop: "11px", fontSize: "12.5px", color: "var(--text-mute)", lineHeight: 1.55 }}>
+                {streamingEnabled
+                  ? "모션을 끄거나 시스템이 모션 줄이기를 요청하면 이 설정과 관계없이 효과 없이 표시됩니다."
+                  : "응답 스트리밍이 꺼져 있어 지금은 적용되지 않아요. 선택은 그대로 두고 스트리밍을 켜면 다시 재생됩니다."}
+              </div>
+            </div>
+          </section>
+
+          {/* 채팅창 애니메이션 */}
+          <section style={{ background: "var(--bg-elev)", border: "1px solid var(--border)", borderRadius: "18px", padding: "clamp(20px, 3vw, 28px)" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", marginBottom: "4px" }}>
+              <span id="chat-animation-title" style={{ fontSize: "16px", fontWeight: 700 }}>채팅창 애니메이션</span>
+              <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "12.5px", color: "var(--accent, #6366f1)", whiteSpace: "nowrap" }}>
+                {CHAT_ANIMATION_OPTIONS.find((option) => option.value === chatAnimation)?.label || "젤리"}
+              </span>
+            </div>
+            <div id="chat-animation-description" style={{ fontSize: "13.5px", color: "var(--text-mute)", marginBottom: "18px", lineHeight: 1.6 }}>
+              챗봇 창이 열리고 닫힐 때의 효과예요. PC 화면에만 적용되고, 모바일은 기존 화면 전환을 그대로 씁니다.
+            </div>
+            <div
+              role="radiogroup"
+              aria-label="채팅창 애니메이션"
+              aria-describedby="chat-animation-description"
+              style={{ display: "flex", gap: "8px", padding: "5px", background: "var(--bg-elev-2)", border: "1px solid var(--border)", borderRadius: "13px", maxWidth: "480px" }}
+            >
+              {CHAT_ANIMATION_OPTIONS.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => setChatAnimation(option.value)}
+                  role="radio"
+                  aria-checked={chatAnimation === option.value}
+                  style={getSegBtnStyle(chatAnimation === option.value)}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+            <div style={{ marginTop: "11px", fontSize: "12.5px", color: "var(--text-mute)", lineHeight: 1.55 }}>
+              모션을 끄거나 시스템이 모션 줄이기를 요청하면 이 설정과 관계없이 효과 없이 표시됩니다.
+            </div>
+          </section>
+
           {/* Reset Notice */}
           <div style={{ display: "flex", flexWrap: "wrap", gap: "12px", alignItems: "center", justifyContent: "space-between", padding: "6px 4px" }}>
             <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "11.5px", color: "var(--text-mute)", lineHeight: 1.6 }}>
@@ -547,7 +725,7 @@ export default function SettingsPage() {
               다음 방문에도 유지됩니다.
             </span>
             <button
-              onClick={resetTheme}
+              onClick={resetAllSettings}
               className="hover-reset-btn"
               style={{
                 display: "flex",
@@ -567,7 +745,7 @@ export default function SettingsPage() {
                 <path d="M3 12a9 9 0 1 0 3-6.7L3 8" />
                 <path d="M3 4v4h4" />
               </svg>
-              기본값으로 초기화
+              테마와 챗봇 설정 초기화
             </button>
           </div>
         </div>

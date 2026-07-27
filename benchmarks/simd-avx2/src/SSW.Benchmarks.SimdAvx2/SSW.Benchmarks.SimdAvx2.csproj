@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>SSW.Benchmarks.SimdAvx2</AssemblyName>
+    <RootNamespace>SSW.Benchmarks.SimdAvx2</RootNamespace>
+  </PropertyGroup>
+</Project>

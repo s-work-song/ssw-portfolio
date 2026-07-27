@@ -42,7 +42,11 @@ export default function LogPage() {
         </div>
       </AboutPanel>
 
-      <section style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      <section
+        id="log-entries"
+        tabIndex={-1}
+        style={{ display: 'flex', flexDirection: 'column', gap: '24px', scrollMarginTop: '96px' }}
+      >
         {allPostsData.length === 0 ? (
           <p style={{ color: 'var(--text-mute)' }}>아직 등록된 글이 없습니다.</p>
         ) : (

@@ -1,0 +1,4 @@
+# 로컬 임베딩 모델/런타임 캐시는 저장소에 포함하지 않는다.
+.cache/
+.transformers-cache/
+models/

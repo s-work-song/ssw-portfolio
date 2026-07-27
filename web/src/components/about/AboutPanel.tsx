@@ -7,13 +7,19 @@ import type { CSSProperties, ReactNode } from 'react';
 
 export default function AboutPanel({
   children,
+  id,
   style,
+  tabIndex,
 }: {
   children: ReactNode;
+  id?: string;
   style?: CSSProperties;
+  tabIndex?: number;
 }) {
   return (
     <section
+      id={id}
+      tabIndex={tabIndex}
       style={{
         background: 'var(--bg-elev)',
         border: '1px solid var(--border)',

@@ -284,8 +284,13 @@ return Vector256.Sum(accumulator) + ScalarSum(src[남은_청크..]);`}
                   </div>
 
                 </div>
-                <div style={{ marginTop: '20px', fontSize: '0.8rem', color: 'var(--accent, #6366f1)', fontWeight: 700, textAlign: 'right', borderTop: '1px solid var(--border)', paddingTop: '12px' }}>
-                  ← 단일 스레드 무작위 표준 분기 대비 SIMD 정렬 병렬 처리의 처리 시간 약 485배 단축 (5,341 μs ➔ 11 μs)
+                <div style={{ marginTop: '20px', textAlign: 'right', borderTop: '1px solid var(--border)', paddingTop: '12px' }}>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--accent, #6366f1)', fontWeight: 700, wordBreak: 'keep-all' }}>
+                    ← 전체 최적화 조합(SIMD + 병렬 처리 + 정렬 데이터) 기준 최대 약 485배 단축 (5,341 μs ➔ 11 μs)
+                  </div>
+                  <div style={{ marginTop: '6px', fontSize: '0.75rem', color: 'var(--text-mute)', lineHeight: 1.5, wordBreak: 'keep-all' }}>
+                    구현 방식만 바꾼 동일 조건 비교에서 SIMD 단독 효과는 단일 스레드·비정렬 약 143배(5,341 μs ➔ 37 μs), 병렬·정렬 약 15.2배(167 μs ➔ 11 μs)입니다.
+                  </div>
                 </div>
               </div>
 
