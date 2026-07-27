@@ -2,7 +2,7 @@
   "name": "ssw-portfolio",
   "private": true,
   "version": "0.0.0",
-  "description": "SW Song 모노레포 — 진입 페이지는 web/, 샘플 앱은 sample-apps/, 백엔드는 services/",
+  "description": "SW Song 모노레포 — 진입 페이지는 web/, RAG 백엔드는 backend/(독립 설치), 샘플 앱은 sample-apps/",
   "workspaces": [
     "web",
     "sample-apps/*",
