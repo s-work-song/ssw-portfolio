@@ -85,7 +85,7 @@ function parseSuggestedQuestions(value: unknown): string[] {
     }
     seen.add(key);
     questions.push(question);
-    if (questions.length >= 3) break;
+    if (questions.length >= 4) break;
   }
   return questions;
 }
