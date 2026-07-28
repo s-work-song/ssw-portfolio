@@ -664,6 +664,17 @@
   outline-offset: 2px;
 }
 
+.disclaimer {
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 0 12px 10px;
+  background: var(--chat-bg);
+  color: var(--chat-dim);
+  font-size: 10px;
+  line-height: 1.45;
+  text-align: center;
+}
+
 .visuallyHidden {
   position: absolute;
   width: 1px;
