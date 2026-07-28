@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Fragment,
   useCallback,
   useEffect,
   useLayoutEffect,
@@ -198,10 +199,6 @@ export function ChatWidget() {
     navigateAction,
   } = useChat();
   const [draft, setDraft] = useState("");
-  const [pendingAudiencePrompt, setPendingAudiencePrompt] = useState<{
-    audience: AudienceChoice;
-    prompt: string;
-  } | null>(null);
   const isMobile = useMobileViewport();
   const visualViewportStyle = useVisualViewportStyle(isMobile);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -219,7 +216,7 @@ export function ChatWidget() {
   const showOnboarding =
     messages.length === 1 &&
     messages[0]?.kind === "greeting" &&
-    pendingAudiencePrompt === null;
+    !isLoading;
   const latestSuggestionMessageId = useMemo(() => {
     if (isLoading) return null;
     const latestMessage = messages[messages.length - 1];
@@ -229,20 +226,6 @@ export function ChatWidget() {
       ? latestMessage.id
       : null;
   }, [isLoading, messages]);
-
-  useEffect(() => {
-    if (
-      !pendingAudiencePrompt ||
-      audience !== pendingAudiencePrompt.audience ||
-      isLoading
-    ) {
-      return;
-    }
-
-    const prompt = pendingAudiencePrompt.prompt;
-    setPendingAudiencePrompt(null);
-    void sendMessage(prompt);
-  }, [audience, isLoading, pendingAudiencePrompt, sendMessage]);
 
   const cancelPinnedScroll = useCallback(() => {
     window.cancelAnimationFrame(firstPinFrameRef.current);
@@ -537,47 +520,16 @@ export function ChatWidget() {
                 onTouchStart={handleUserScrollIntent}
                 onWheel={handleUserScrollIntent}
               >
-                {showOnboarding && (
-                  <fieldset className={styles.onboarding}>
-                    <legend>
-                      어떤 관점에서 보고 계신가요? 선택하면 맞춤 소개를 시작해요.
-                    </legend>
-                    <div className={styles.audienceOptions}>
-                      {AUDIENCE_OPTIONS.map((option) => (
-                        <button
-                          key={option.value}
-                          type="button"
-                          aria-pressed={audience === option.value}
-                          className={
-                            audience === option.value
-                              ? styles.selectedOption
-                              : ""
-                          }
-                          onClick={() => {
-                            selectAudience(option.value);
-                            setPendingAudiencePrompt({
-                              audience: option.value,
-                              prompt: AUDIENCE_PROMPTS[option.value],
-                            });
-                          }}
-                        >
-                          {option.label}
-                        </button>
-                      ))}
-                    </div>
-                  </fieldset>
-                )}
-
                 <div className={styles.messages}>
                   {messages.map((message) => (
-                    <article
-                      key={message.id}
-                      className={`${styles.message} ${
-                        message.role === "user"
-                          ? styles.userMessage
-                          : styles.assistantMessage
-                      }`}
-                    >
+                    <Fragment key={message.id}>
+                      <article
+                        className={`${styles.message} ${
+                          message.role === "user"
+                            ? styles.userMessage
+                            : styles.assistantMessage
+                        }`}
+                      >
                       {message.kind === "retrieval_fallback" && (
                         <strong className={styles.offlineBadge}>
                           오프라인 · 생성 답변 없음
@@ -695,7 +647,38 @@ export function ChatWidget() {
                             ))}
                           </nav>
                         )}
-                    </article>
+                      </article>
+                      {message.kind === "greeting" && showOnboarding && (
+                        <fieldset className={styles.onboarding}>
+                          <legend>
+                            어떤 관점에서 보고 계신가요? 선택하면 맞춤 소개를 시작해요.
+                          </legend>
+                          <div className={styles.audienceOptions}>
+                            {AUDIENCE_OPTIONS.map((option) => (
+                              <button
+                                key={option.value}
+                                type="button"
+                                aria-pressed={audience === option.value}
+                                className={
+                                  audience === option.value
+                                    ? styles.selectedOption
+                                    : ""
+                                }
+                                onClick={() => {
+                                  selectAudience(option.value);
+                                  void sendMessage(
+                                    AUDIENCE_PROMPTS[option.value],
+                                    option.value,
+                                  );
+                                }}
+                              >
+                                {option.label}
+                              </button>
+                            ))}
+                          </div>
+                        </fieldset>
+                      )}
+                    </Fragment>
                   ))}
                   {isLoading && (
                     <p className={styles.loading} role="status">
