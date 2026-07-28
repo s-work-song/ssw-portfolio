@@ -731,6 +731,10 @@ export function ChatWidget() {
                   </button>
                 )}
               </form>
+              <p className={styles.disclaimer}>
+                챗봇은 실수할 수 있습니다. 중요한 내용은 포트폴리오 페이지
+                또는 공개된 연락처를 통해 확인해 주세요.
+              </p>
             </div>
           </section>
         </>
