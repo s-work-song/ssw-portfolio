@@ -539,7 +539,40 @@
   border-top: 1px solid var(--chat-border);
 }
 
-.actions button:focus-visible {
+.suggestedQuestions {
+  display: grid;
+  gap: 6px;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--chat-border);
+}
+
+.suggestedQuestionsLabel {
+  color: var(--chat-dim);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.suggestedQuestionButton {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid color-mix(in srgb, var(--chat-accent) 32%, var(--chat-border));
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--chat-accent) 5%, var(--chat-bg));
+  color: var(--chat-text);
+  cursor: pointer;
+  font-size: 11px;
+  line-height: 1.4;
+  text-align: left;
+}
+
+.suggestedQuestionButton:hover {
+  border-color: var(--chat-accent);
+  color: var(--chat-accent);
+}
+
+.actions button:focus-visible,
+.suggestedQuestionButton:focus-visible {
   outline: 2px solid var(--chat-accent);
   outline-offset: 2px;
 }
