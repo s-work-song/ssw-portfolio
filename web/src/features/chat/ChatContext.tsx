@@ -36,7 +36,10 @@ export interface ChatContextValue {
   setStreamingEnabled: (enabled: boolean) => void;
   setChatAnimation: (animation: ChatAnimation) => void;
   setStreamAnimation: (animation: ChatStreamAnimation) => void;
-  sendMessage: (message: string) => Promise<void>;
+  sendMessage: (
+    message: string,
+    audienceOverride?: AudienceChoice,
+  ) => Promise<void>;
   stopGenerating: () => void;
   retry: () => Promise<void>;
   navigateAction: (id: ActionId) => void;
