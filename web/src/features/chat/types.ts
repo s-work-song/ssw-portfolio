@@ -86,6 +86,7 @@ export interface ChatResponse {
   pageContext: PageContext;
   sources: ChatSource[];
   actions: ChatAction[];
+  suggestedQuestions: string[];
   cached: boolean;
 }
 
@@ -98,6 +99,7 @@ export interface ChatMessage {
   segments?: ChatSegment[];
   sources?: ChatSource[];
   actions?: ChatAction[];
+  suggestedQuestions?: string[];
 }
 
 export interface ChatRequest {
