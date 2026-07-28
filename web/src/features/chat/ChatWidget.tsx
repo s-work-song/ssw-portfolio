@@ -16,6 +16,7 @@ import ElasticJellyPanel from "../../lib/ElasticJellyPanel";
 import { AUDIENCE_OPTIONS, TONE_OPTIONS } from "./constants";
 import { useChat } from "./ChatContext";
 import { StreamingText } from "./StreamingText";
+import type { ChatMessage } from "./types";
 import styles from "./ChatWidget.module.css";
 
 const MOBILE_QUERY = "(max-width: 720px)";
@@ -41,6 +42,22 @@ type VisualViewportStyle = CSSProperties &
     | "--chat-exit-distance",
     string
   >;
+
+function summaryActionsForMessage(message: ChatMessage) {
+  const segments = message.segments ?? [];
+  const lastInlineActionGroup = [...segments]
+    .reverse()
+    .find((segment) => segment.actions.length > 0);
+  const adjacentActionIds = new Set(
+    lastInlineActionGroup?.actions.map((action) => action.id) ?? [],
+  );
+  const seen = new Set<string>();
+  return (message.actions ?? []).filter((action) => {
+    if (adjacentActionIds.has(action.id) || seen.has(action.id)) return false;
+    seen.add(action.id);
+    return true;
+  });
+}
 
 function useMobileViewport(): boolean {
   const [isMobile, setIsMobile] = useState(false);
@@ -184,6 +201,15 @@ export function ChatWidget() {
   const firstPinFrameRef = useRef(0);
   const secondPinFrameRef = useRef(0);
   const pinSettleTimerRef = useRef(0);
+  const latestSuggestionMessageId = useMemo(() => {
+    if (isLoading) return null;
+    const latestMessage = messages[messages.length - 1];
+    return latestMessage?.role === "assistant" &&
+      latestMessage.generationState === "complete" &&
+      latestMessage.suggestedQuestions?.length
+      ? latestMessage.id
+      : null;
+  }, [isLoading, messages]);
 
   const cancelPinnedScroll = useCallback(() => {
     window.cancelAnimationFrame(firstPinFrameRef.current);
@@ -586,12 +612,12 @@ export function ChatWidget() {
                       ) : (
                         <p className={styles.messageText}>{message.content}</p>
                       )}
-                      {message.actions && message.actions.length > 0 && (
+                      {summaryActionsForMessage(message).length > 0 && (
                         <nav
                           className={`${styles.actions} ${styles.summaryActions}`}
                           aria-label="관련 페이지"
                         >
-                          {message.actions.map((action) => (
+                          {summaryActionsForMessage(message).map((action) => (
                             <button
                               key={action.id}
                               type="button"
@@ -602,6 +628,28 @@ export function ChatWidget() {
                           ))}
                         </nav>
                       )}
+                      {message.id === latestSuggestionMessageId &&
+                        message.suggestedQuestions &&
+                        message.suggestedQuestions.length > 0 && (
+                          <nav
+                            className={styles.suggestedQuestions}
+                            aria-label="이어서 물어볼 질문"
+                          >
+                            <span className={styles.suggestedQuestionsLabel}>
+                              이어서 물어보기
+                            </span>
+                            {message.suggestedQuestions.map((question) => (
+                              <button
+                                key={question}
+                                type="button"
+                                className={styles.suggestedQuestionButton}
+                                onClick={() => void sendMessage(question)}
+                              >
+                                {question}
+                              </button>
+                            ))}
+                          </nav>
+                        )}
                     </article>
                   ))}
                   {isLoading && (
