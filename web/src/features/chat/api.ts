@@ -68,6 +68,28 @@ function parseSegment(value: unknown): ChatSegment | null {
   };
 }
 
+function parseSuggestedQuestions(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  const questions: string[] = [];
+  const seen = new Set<string>();
+  for (const item of value) {
+    if (!isString(item)) continue;
+    const question = item.trim();
+    const key = question.normalize("NFKC").toLowerCase();
+    if (
+      question.length < 4 ||
+      question.length > 120 ||
+      seen.has(key)
+    ) {
+      continue;
+    }
+    seen.add(key);
+    questions.push(question);
+    if (questions.length >= 3) break;
+  }
+  return questions;
+}
+
 function parseChatResponse(value: unknown): ChatResponse {
   if (!isRecord(value)) {
     throw new ChatApiError("서버 응답 형식을 확인할 수 없습니다.");
@@ -84,6 +106,7 @@ function parseChatResponse(value: unknown): ChatResponse {
     pageContext,
     sources,
     actions,
+    suggestedQuestions,
     cached,
   } = value;
 
@@ -127,6 +150,8 @@ function parseChatResponse(value: unknown): ChatResponse {
       .map(parseAction)
       .filter((action): action is ChatAction => action !== null)
       .slice(0, 2),
+    // 백엔드와 프론트의 순차 배포 중에도 기존 응답을 계속 읽는다.
+    suggestedQuestions: parseSuggestedQuestions(suggestedQuestions),
     cached,
   };
 }
