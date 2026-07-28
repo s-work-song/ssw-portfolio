@@ -16,7 +16,7 @@ import ElasticJellyPanel from "../../lib/ElasticJellyPanel";
 import { AUDIENCE_OPTIONS, TONE_OPTIONS } from "./constants";
 import { useChat } from "./ChatContext";
 import { StreamingText } from "./StreamingText";
-import type { ChatMessage } from "./types";
+import type { AudienceChoice, ChatMessage } from "./types";
 import styles from "./ChatWidget.module.css";
 
 const MOBILE_QUERY = "(max-width: 720px)";
@@ -24,6 +24,17 @@ const BOTTOM_PIN_THRESHOLD_PX = 64;
 const KEYBOARD_SETTLE_DELAY_MS = 220;
 /** 젤리 엔진이 콘텐츠 래퍼를 찾을 때 쓰는 전역 클래스명(엔진 계약)이다. */
 const JELLY_CONTENT_CLASS = "chat-content-wrapper";
+
+const AUDIENCE_PROMPTS: Readonly<Record<AudienceChoice, string>> = {
+  recruiter:
+    "채용·평가 관점에서 경력, 역할, 강점과 대표 프로젝트를 중심으로 포트폴리오를 소개해 주세요.",
+  developer:
+    "개발·기술 검토 관점에서 기술 스택, 대표 프로젝트, 구조와 검증 방식을 중심으로 소개해 주세요.",
+  collaboration:
+    "협업·의뢰 관점에서 맡길 수 있는 업무, 대표 프로젝트, 작업 방식과 결과물을 중심으로 소개해 주세요.",
+  casual: "처음 방문한 사람에게 포트폴리오의 핵심만 짧게 소개해 주세요.",
+  default: "포트폴리오를 간단히 소개해 주세요.",
+};
 
 interface VisualViewportMetrics {
   top: number;
@@ -187,6 +198,10 @@ export function ChatWidget() {
     navigateAction,
   } = useChat();
   const [draft, setDraft] = useState("");
+  const [pendingAudiencePrompt, setPendingAudiencePrompt] = useState<{
+    audience: AudienceChoice;
+    prompt: string;
+  } | null>(null);
   const isMobile = useMobileViewport();
   const visualViewportStyle = useVisualViewportStyle(isMobile);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -201,6 +216,10 @@ export function ChatWidget() {
   const firstPinFrameRef = useRef(0);
   const secondPinFrameRef = useRef(0);
   const pinSettleTimerRef = useRef(0);
+  const showOnboarding =
+    messages.length === 1 &&
+    messages[0]?.kind === "greeting" &&
+    pendingAudiencePrompt === null;
   const latestSuggestionMessageId = useMemo(() => {
     if (isLoading) return null;
     const latestMessage = messages[messages.length - 1];
@@ -210,6 +229,20 @@ export function ChatWidget() {
       ? latestMessage.id
       : null;
   }, [isLoading, messages]);
+
+  useEffect(() => {
+    if (
+      !pendingAudiencePrompt ||
+      audience !== pendingAudiencePrompt.audience ||
+      isLoading
+    ) {
+      return;
+    }
+
+    const prompt = pendingAudiencePrompt.prompt;
+    setPendingAudiencePrompt(null);
+    void sendMessage(prompt);
+  }, [audience, isLoading, pendingAudiencePrompt, sendMessage]);
 
   const cancelPinnedScroll = useCallback(() => {
     window.cancelAnimationFrame(firstPinFrameRef.current);
@@ -504,24 +537,36 @@ export function ChatWidget() {
                 onTouchStart={handleUserScrollIntent}
                 onWheel={handleUserScrollIntent}
               >
-                <fieldset className={styles.onboarding}>
-                  <legend>어떤 관점에서 보고 계신가요? 답변 깊이를 맞출게요.</legend>
-                  <div className={styles.audienceOptions}>
-                    {AUDIENCE_OPTIONS.map((option) => (
-                      <button
-                        key={option.value}
-                        type="button"
-                        aria-pressed={audience === option.value}
-                        className={
-                          audience === option.value ? styles.selectedOption : ""
-                        }
-                        onClick={() => selectAudience(option.value)}
-                      >
-                        {option.label}
-                      </button>
-                    ))}
-                  </div>
-                </fieldset>
+                {showOnboarding && (
+                  <fieldset className={styles.onboarding}>
+                    <legend>
+                      어떤 관점에서 보고 계신가요? 선택하면 맞춤 소개를 시작해요.
+                    </legend>
+                    <div className={styles.audienceOptions}>
+                      {AUDIENCE_OPTIONS.map((option) => (
+                        <button
+                          key={option.value}
+                          type="button"
+                          aria-pressed={audience === option.value}
+                          className={
+                            audience === option.value
+                              ? styles.selectedOption
+                              : ""
+                          }
+                          onClick={() => {
+                            selectAudience(option.value);
+                            setPendingAudiencePrompt({
+                              audience: option.value,
+                              prompt: AUDIENCE_PROMPTS[option.value],
+                            });
+                          }}
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+                  </fieldset>
+                )}
 
                 <div className={styles.messages}>
                   {messages.map((message) => (
