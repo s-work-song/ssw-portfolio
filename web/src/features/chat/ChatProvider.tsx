@@ -543,6 +543,7 @@ export function ChatProvider({ children }: Readonly<{ children: ReactNode }>) {
           generationState: "complete",
           segments: response.segments,
           actions: response.actions,
+          suggestedQuestions: response.suggestedQuestions,
         };
         setMessages((current) =>
           streamingMessageId
