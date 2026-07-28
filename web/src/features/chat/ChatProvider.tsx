@@ -114,6 +114,7 @@ function isStreamAnimation(
 interface PendingRetry {
   message: string;
   history: ChatHistoryItem[];
+  audienceOverride?: AudienceChoice;
   assistantMessageId?: string;
 }
 
@@ -476,7 +477,7 @@ export function ChatProvider({ children }: Readonly<{ children: ReactNode }>) {
       const request: ChatRequest = {
         message: pending.message,
         history: pending.history,
-        audience: audienceToApi(audience),
+        audience: audienceToApi(pending.audienceOverride ?? audience),
         tone,
         pageContext,
       };
@@ -605,7 +606,7 @@ export function ChatProvider({ children }: Readonly<{ children: ReactNode }>) {
   );
 
   const sendMessage = useCallback(
-    async (content: string) => {
+    async (content: string, audienceOverride?: AudienceChoice) => {
       const message = content.trim();
       if (!message || inFlightRef.current) return;
 
@@ -619,7 +620,7 @@ export function ChatProvider({ children }: Readonly<{ children: ReactNode }>) {
           kind: "message",
         },
       ]);
-      const pending = { message, history };
+      const pending = { message, history, audienceOverride };
       retryRef.current = pending;
       await performRequest(pending);
     },
