@@ -3,7 +3,7 @@
 /**
  * 색상 모드와 포트폴리오 전용 테마 옵션을 전역에 공급하는 컨텍스트 모듈이다.
  * next-themes에는 light/dark/system 적용을 위임하고, 포인트 컬러·모션 정책·
- * 플로팅 버튼 모드·글로우는 이 Provider가 영속화한다. 소비자는 저장소나 DOM 구현을 몰라도 되는
+ * 페이지 전환·플로팅 버튼 모드·글로우는 이 Provider가 영속화한다. 소비자는 저장소나 DOM 구현을 몰라도 되는
  * Provider 패턴이며, ThemeContextType이 읽기/변경 계약을 한곳에 고정한다(DIP).
  */
 import React, { createContext, useContext, useState, useEffect } from "react";
@@ -12,18 +12,24 @@ import { ThemeProvider as NextThemesProvider, useTheme as useNextTheme } from "n
 export type Mode = "dark" | "light" | "system";
 export type Accent = "indigo" | "emerald" | "amber" | "rose" | "violet";
 export type FabMode = "chat" | "quick-menu";
+export type FabAnim = "none" | "rise" | "slide" | "pop" | "blur";
 export type MotionPreference = "system" | "on" | "off";
+export type PageTransition = "none" | "slide" | "fade" | "lift";
 
 export interface ThemeContextType {
   mode: Mode;
   accent: Accent;
   motion: MotionPreference;
+  pageTransition: PageTransition;
   fabMode: FabMode;
+  fabAnim: FabAnim;
   glow: boolean;
   setMode: (m: Mode) => void;
   setAccent: (a: Accent) => void;
   setMotion: (m: MotionPreference) => void;
+  setPageTransition: (transition: PageTransition) => void;
   setFabMode: (mode: FabMode) => void;
+  setFabAnim: (animation: FabAnim) => void;
   setGlow: (g: boolean) => void;
   resetTheme: () => void;
 }
@@ -45,7 +51,10 @@ function CustomThemeProvider({ children }: { children: React.ReactNode }) {
   // 기본값 "항상 켬": OS 모션 줄이기와 무관하게 사이트 연출을 보여주고,
   // 원치 않는 방문자가 설정에서 시스템 따름/끔을 선택한다 (2026-07-27 결정).
   const [motion, setMotionState] = useState<MotionPreference>("on");
+  const [pageTransition, setPageTransitionState] =
+    useState<PageTransition>("fade");
   const [fabMode, setFabModeState] = useState<FabMode>("chat");
+  const [fabAnim, setFabAnimState] = useState<FabAnim>("slide");
   const [glow, setGlowState] = useState<boolean>(true);
   const [mounted, setMounted] = useState(false);
 
@@ -68,18 +77,40 @@ function CustomThemeProvider({ children }: { children: React.ReactNode }) {
         // 구 사이트의 자동 저장이라 사용자의 명시적 선택으로 보지 않고, 새 기본값
         // "항상 켬"을 유지한 채 마이그레이션한다 (2026-07-27 결정).
         if (
-          (parsed.v === 2 || parsed.v === 3) &&
+          (parsed.v === 2 ||
+            parsed.v === 3 ||
+            parsed.v === 4 ||
+            parsed.v === 5) &&
           (parsed.motion === "system" || parsed.motion === "on" || parsed.motion === "off")
         ) {
           setMotionState(parsed.motion);
         }
-        // v2의 fabAnim은 실제 위젯에 연결되지 않았던 미리보기 전용 값이다.
-        // v3부터 기능 모드만 복원하며, 기존 사용자는 기본값인 채팅 바로 열기를 쓴다.
         if (
-          parsed.v === 3 &&
+          (parsed.v === 3 || parsed.v === 4 || parsed.v === 5) &&
           (parsed.fabMode === "chat" || parsed.fabMode === "quick-menu")
         ) {
           setFabModeState(parsed.fabMode);
+        }
+        // v2에서 미리보기 전용이었던 선택값도 실제 빠른 메뉴 연출로 승격해 복원한다.
+        if (
+          (parsed.v === 2 || parsed.v === 4 || parsed.v === 5) &&
+          (parsed.fabAnim === "none" ||
+            parsed.fabAnim === "rise" ||
+            parsed.fabAnim === "slide" ||
+            parsed.fabAnim === "pop" ||
+            parsed.fabAnim === "blur" ||
+            parsed.fabAnim === "fade")
+        ) {
+          setFabAnimState(parsed.fabAnim === "fade" ? "blur" : parsed.fabAnim);
+        }
+        if (
+          parsed.v === 5 &&
+          (parsed.pageTransition === "none" ||
+            parsed.pageTransition === "slide" ||
+            parsed.pageTransition === "fade" ||
+            parsed.pageTransition === "lift")
+        ) {
+          setPageTransitionState(parsed.pageTransition);
         }
         if (typeof parsed.glow === "boolean") setGlowState(parsed.glow);
       }
@@ -110,12 +141,28 @@ function CustomThemeProvider({ children }: { children: React.ReactNode }) {
     try {
       localStorage.setItem(
         "swork-theme-custom",
-        JSON.stringify({ v: 3, accent, motion, fabMode, glow })
+        JSON.stringify({
+          v: 5,
+          accent,
+          motion,
+          pageTransition,
+          fabMode,
+          fabAnim,
+          glow,
+        })
       );
     } catch (e) {
       console.error("Failed to save custom theme to localStorage", e);
     }
-  }, [accent, motion, fabMode, glow, mounted]);
+  }, [
+    accent,
+    motion,
+    pageTransition,
+    fabMode,
+    fabAnim,
+    glow,
+    mounted,
+  ]);
 
   const setMode = (m: Mode) => {
     setModeState(m);
@@ -123,7 +170,10 @@ function CustomThemeProvider({ children }: { children: React.ReactNode }) {
   };
   const setAccent = (a: Accent) => setAccentState(a);
   const setMotion = (m: MotionPreference) => setMotionState(m);
+  const setPageTransition = (transition: PageTransition) =>
+    setPageTransitionState(transition);
   const setFabMode = (nextMode: FabMode) => setFabModeState(nextMode);
+  const setFabAnim = (animation: FabAnim) => setFabAnimState(animation);
   const setGlow = (g: boolean) => setGlowState(g);
   
   const resetTheme = () => {
@@ -131,7 +181,9 @@ function CustomThemeProvider({ children }: { children: React.ReactNode }) {
     setTheme("system");
     setAccentState("indigo");
     setMotionState("on");
+    setPageTransitionState("fade");
     setFabModeState("chat");
+    setFabAnimState("slide");
     setGlowState(true);
   };
 
@@ -141,12 +193,16 @@ function CustomThemeProvider({ children }: { children: React.ReactNode }) {
         mode,
         accent,
         motion,
+        pageTransition,
         fabMode,
+        fabAnim,
         glow,
         setMode,
         setAccent,
         setMotion,
+        setPageTransition,
         setFabMode,
+        setFabAnim,
         setGlow,
         resetTheme,
       }}

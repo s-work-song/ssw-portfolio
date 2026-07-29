@@ -41,6 +41,7 @@ export interface ChatContextValue {
   setChatAnimation: (animation: ChatAnimation) => void;
   setStreamAnimation: (animation: ChatStreamAnimation) => void;
   refreshAvailability: () => Promise<void>;
+  resetConversation: () => void;
   sendMessage: (
     message: string,
     audienceOverride?: AudienceChoice,

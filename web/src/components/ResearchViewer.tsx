@@ -7,13 +7,75 @@
  * 상태 기반 Strategy 패턴을 사용한다.
  */
 import Link from 'next/link';
+import React from 'react';
 import { researchTabs } from '@/data/research';
+import type { ResearchTabId } from '@/data/research';
 import ResearchPanels from '@/components/research/ResearchPanels';
 import ResearchTabs from '@/components/research/ResearchTabs';
 import { useResearchTabs } from '@/components/research/useResearchTabs';
+import { useTheme } from '@/context/ThemeContext';
+
+const RESEARCH_PANEL_EXIT_DURATION_MS = 150;
 
 export default function ResearchViewer() {
   const { activeTab, selectTab } = useResearchTabs();
+  const { motion, pageTransition } = useTheme();
+  const [transitionDirection, setTransitionDirection] = React.useState<
+    'forward' | 'backward'
+  >('forward');
+  const [exitingTab, setExitingTab] = React.useState<ResearchTabId | null>(
+    null,
+  );
+  const [animatedTab, setAnimatedTab] = React.useState<ResearchTabId | null>(
+    null,
+  );
+  const transitionTimerRef = React.useRef(0);
+
+  React.useEffect(
+    () => () => {
+      window.clearTimeout(transitionTimerRef.current);
+    },
+    [],
+  );
+
+  const selectResearchTab = (targetTab: ResearchTabId) => {
+    if (targetTab === activeTab) return;
+
+    const currentIndex = researchTabs.findIndex((tab) => tab.id === activeTab);
+    const targetIndex = researchTabs.findIndex((tab) => tab.id === targetTab);
+    setTransitionDirection(
+      targetIndex >= currentIndex ? 'forward' : 'backward',
+    );
+
+    const reduceMotion =
+      motion === 'off' ||
+      (motion === 'system' &&
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    if (pageTransition === 'none' || reduceMotion) {
+      setAnimatedTab(null);
+      selectTab(targetTab);
+      return;
+    }
+
+    window.clearTimeout(transitionTimerRef.current);
+    setExitingTab(activeTab);
+    transitionTimerRef.current = window.setTimeout(() => {
+      setAnimatedTab(targetTab);
+      selectTab(targetTab);
+      setExitingTab(null);
+      transitionTimerRef.current = 0;
+    }, RESEARCH_PANEL_EXIT_DURATION_MS);
+  };
+
+  const panelClassName = [
+    'research-panel-content',
+    pageTransition !== 'none' && animatedTab === activeTab
+      ? `research-panel-transition-${pageTransition}`
+      : '',
+    exitingTab === activeTab ? 'research-panel-content-exiting' : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
 
   return (
     <div
@@ -21,14 +83,24 @@ export default function ResearchViewer() {
       tabIndex={-1}
       style={{ display: 'flex', flexDirection: 'column', gap: '32px', scrollMarginTop: '96px' }}
     >
-      <ResearchTabs tabs={researchTabs} activeTab={activeTab} onSelect={selectTab} />
+      <ResearchTabs
+        tabs={researchTabs}
+        activeTab={activeTab}
+        onSelect={selectResearchTab}
+      />
 
-      <div
-        id={`research-panel-${activeTab}`}
-        role="tabpanel"
-        aria-labelledby={`research-tab-${activeTab}`}
-      >
-        <ResearchPanels activeTab={activeTab} />
+      <div className="research-panel-transition-viewport">
+        <div
+          key={activeTab}
+          id={`research-panel-${activeTab}`}
+          className={panelClassName}
+          role="tabpanel"
+          aria-labelledby={`research-tab-${activeTab}`}
+          data-page-transition={pageTransition}
+          data-page-direction={transitionDirection}
+        >
+          <ResearchPanels activeTab={activeTab} />
+        </div>
       </div>
 
       <section style={{

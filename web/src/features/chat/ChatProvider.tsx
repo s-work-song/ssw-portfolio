@@ -763,6 +763,19 @@ export function ChatProvider({ children }: Readonly<{ children: ReactNode }>) {
     abortRef.current.abort();
   }, []);
 
+  const resetConversation = useCallback(() => {
+    retryRef.current = null;
+    setError(null);
+    setAudience(null);
+    setMessages(initialMessages());
+
+    if (inFlightRef.current && abortRef.current) {
+      // 사용자 중단 안내를 남기지 않고 진행 중인 요청만 조용히 정리한다.
+      stopRequestedRef.current = false;
+      abortRef.current.abort();
+    }
+  }, []);
+
   const setStreamingEnabled = useCallback((enabled: boolean) => {
     setStreamingEnabledState(enabled);
     try {
@@ -864,6 +877,7 @@ export function ChatProvider({ children }: Readonly<{ children: ReactNode }>) {
       setChatAnimation,
       setStreamAnimation,
       refreshAvailability,
+      resetConversation,
       sendMessage,
       stopGenerating,
       retry,
@@ -886,6 +900,7 @@ export function ChatProvider({ children }: Readonly<{ children: ReactNode }>) {
       completeCloseAnimation,
       retry,
       refreshAvailability,
+      resetConversation,
       reasoningEnabled,
       setChatAnimation,
       setReasoningEnabled,

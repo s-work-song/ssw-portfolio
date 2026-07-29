@@ -76,7 +76,6 @@
   font: inherit;
   text-align: left;
   text-decoration: none;
-  animation: quickMenuItemIn 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
   transition: border-color 160ms ease, transform 160ms ease;
 }
 
@@ -84,18 +83,6 @@
 .quickMenuAction:focus-visible {
   border-color: color-mix(in srgb, var(--chat-accent) 60%, transparent);
   transform: translateX(-3px);
-}
-
-.quickMenu > :nth-child(1) {
-  animation-delay: 120ms;
-}
-
-.quickMenu > :nth-child(2) {
-  animation-delay: 80ms;
-}
-
-.quickMenu > :nth-child(3) {
-  animation-delay: 40ms;
 }
 
 .quickMenuIcon {
@@ -212,6 +199,33 @@
   background: var(--chat-bg);
   color: var(--chat-text);
   font-size: 12px;
+}
+
+.resetConversation {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  place-items: center;
+  border: 1px solid var(--chat-border);
+  border-radius: 9px;
+  background: transparent;
+  color: var(--chat-dim);
+  cursor: pointer;
+  font-size: 19px;
+  line-height: 1;
+}
+
+.resetConversation:hover:not(:disabled),
+.resetConversation:focus-visible {
+  border-color: color-mix(in srgb, var(--chat-accent) 55%, transparent);
+  background: var(--chat-bg);
+  color: var(--chat-accent);
+}
+
+.resetConversation:disabled {
+  cursor: default;
+  opacity: 0.38;
 }
 
 .close {
@@ -1018,17 +1032,6 @@
   to {
     opacity: 0;
     transform: translate3d(0, 18px, 0);
-  }
-}
-
-@keyframes quickMenuItemIn {
-  from {
-    opacity: 0;
-    transform: translate3d(0, 18px, 0) scale(0.96);
-  }
-  to {
-    opacity: 1;
-    transform: translate3d(0, 0, 0) scale(1);
   }
 }
 

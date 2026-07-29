@@ -7,7 +7,14 @@
  */
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { useTheme, ACCENTS, Accent, FabMode } from "../../context/ThemeContext";
+import {
+  useTheme,
+  ACCENTS,
+  Accent,
+  FabAnim,
+  FabMode,
+  PageTransition,
+} from "../../context/ThemeContext";
 import {
   CHAT_ANIMATION_OPTIONS,
   CHAT_STREAM_ANIMATION_OPTIONS,
@@ -29,6 +36,65 @@ const STREAM_PREVIEW_SPEED_OPTIONS = [
   { value: 2, label: "2×", description: "매우 빠르게" },
 ] as const;
 
+const FAB_ANIMATION_OPTIONS: ReadonlyArray<{
+  value: FabAnim;
+  label: string;
+  description: string;
+}> = [
+  {
+    value: "none",
+    label: "없음",
+    description: "효과 없이 즉시 열고 닫기",
+  },
+  {
+    value: "rise",
+    label: "솟아오르기",
+    description: "아래에서 위로 차례대로 등장",
+  },
+  {
+    value: "slide",
+    label: "슬라이드",
+    description: "오른쪽에서 미끄러져 등장",
+  },
+  {
+    value: "pop",
+    label: "팝",
+    description: "작게 톡 튀어나오며 등장",
+  },
+  {
+    value: "blur",
+    label: "블러 포커스",
+    description: "흐릿한 상태에서 또렷하게 등장",
+  },
+];
+
+const PAGE_TRANSITION_OPTIONS: ReadonlyArray<{
+  value: PageTransition;
+  label: string;
+  description: string;
+}> = [
+  {
+    value: "none",
+    label: "없음",
+    description: "페이지를 즉시 전환",
+  },
+  {
+    value: "slide",
+    label: "슬라이드",
+    description: "탭 순서에 따라 좌우로 이동",
+  },
+  {
+    value: "fade",
+    label: "페이드",
+    description: "부드럽게 나타나며 전환",
+  },
+  {
+    value: "lift",
+    label: "위로 전환",
+    description: "아래에서 가볍게 올라오며 전환",
+  },
+];
+
 type StreamPreviewSpeed =
   (typeof STREAM_PREVIEW_SPEED_OPTIONS)[number]["value"];
 
@@ -37,12 +103,16 @@ export default function SettingsPage() {
     mode,
     accent,
     motion,
+    pageTransition,
     fabMode,
+    fabAnim,
     glow,
     setMode,
     setAccent,
     setMotion,
+    setPageTransition,
     setFabMode,
+    setFabAnim,
     setGlow,
     resetTheme,
   } = useTheme();
@@ -63,6 +133,7 @@ export default function SettingsPage() {
   const [streamPreviewCycle, setStreamPreviewCycle] = useState(0);
   const [streamPreviewSpeed, setStreamPreviewSpeed] =
     useState<StreamPreviewSpeed>(1);
+  const [fabPreviewCycle, setFabPreviewCycle] = useState(0);
 
   useEffect(() => {
     let timer = 0;
@@ -190,8 +261,9 @@ export default function SettingsPage() {
           }}
         >
           <Link
-            href="/"
+            href="/about-me"
             className="hover-footer-link"
+            aria-label="소개 페이지로 돌아가기"
             style={{
               display: "flex",
               alignItems: "center",
@@ -218,7 +290,7 @@ export default function SettingsPage() {
                 <polyline points="12 19 5 12 12 5" />
               </svg>
             </span>
-            송상운
+            소개 페이지
           </Link>
           <span
             style={{
@@ -336,6 +408,77 @@ export default function SettingsPage() {
             </div>
           </section>
 
+          {/* About page transitions */}
+          <section style={{ background: "var(--bg-elev)", border: "1px solid var(--border)", borderRadius: "18px", padding: "clamp(20px, 3vw, 28px)" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", marginBottom: "4px" }}>
+              <span id="page-transition-title" style={{ fontSize: "16px", fontWeight: 700 }}>
+                페이지 이동 애니메이션
+              </span>
+              <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "12.5px", color: "var(--accent, #6366f1)", whiteSpace: "nowrap" }}>
+                {PAGE_TRANSITION_OPTIONS.find((option) => option.value === pageTransition)?.label}
+              </span>
+            </div>
+            <div id="page-transition-description" style={{ fontSize: "13.5px", color: "var(--text-mute)", marginBottom: "18px", lineHeight: 1.6 }}>
+              소개 페이지의 탭을 이동할 때 본문이 바뀌는 방식을 정합니다. 기본값은 페이드입니다.
+            </div>
+            <div
+              role="radiogroup"
+              aria-labelledby="page-transition-title"
+              aria-describedby="page-transition-description"
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(145px, 1fr))",
+                gap: "9px",
+              }}
+            >
+              {PAGE_TRANSITION_OPTIONS.map((option) => {
+                const active = pageTransition === option.value;
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => setPageTransition(option.value)}
+                    role="radio"
+                    aria-checked={active}
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "6px",
+                      minWidth: 0,
+                      padding: "13px 14px",
+                      borderRadius: "12px",
+                      textAlign: "left",
+                      cursor: "pointer",
+                      background: active
+                        ? "var(--accent-soft, rgba(99,102,241,.14))"
+                        : "var(--bg-elev-2)",
+                      border: active
+                        ? "1.5px solid var(--accent, #6366f1)"
+                        : "1.5px solid var(--border)",
+                    }}
+                  >
+                    <span style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "7px", width: "100%", fontSize: "13.5px", fontWeight: 700 }}>
+                      {option.label}
+                      {active && (
+                        <span style={{ width: "17px", height: "17px", borderRadius: "50%", background: "var(--accent, #6366f1)", color: "var(--accent-contrast, #fff)", display: "grid", placeItems: "center", flexShrink: 0 }}>
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="20 6 9 17 4 12" />
+                          </svg>
+                        </span>
+                      )}
+                    </span>
+                    <span style={{ fontSize: "11.5px", color: "var(--text-mute)", lineHeight: 1.45 }}>
+                      {option.description}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+            <div style={{ marginTop: "11px", fontSize: "12.5px", color: "var(--text-mute)", lineHeight: 1.55 }}>
+              슬라이드는 다음 탭과 이전 탭의 방향을 구분하며, 모션을 끄면 선택값과 관계없이 즉시 전환됩니다.
+            </div>
+          </section>
+
           {/* Accent Color */}
           <section style={{ background: "var(--bg-elev)", border: "1px solid var(--border)", borderRadius: "18px", padding: "clamp(20px, 3vw, 28px)" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", marginBottom: "4px" }}>
@@ -440,22 +583,62 @@ export default function SettingsPage() {
                   borderRadius: "14px",
                   background: "linear-gradient(160deg, var(--accent-soft, rgba(99,102,241,.12)), var(--bg-elev-2))",
                   overflow: "hidden",
-                  minHeight: "240px",
+                  minHeight: fabMode === "quick-menu" ? "300px" : "240px",
+                  transition: "min-height .2s ease",
                 }}
               >
                 <div style={{ position: "absolute", left: "14px", top: "13px", fontFamily: "'JetBrains Mono', monospace", fontSize: "11px", letterSpacing: ".12em", color: "var(--text-mute)" }}>
                   PREVIEW
                 </div>
+                {fabMode === "quick-menu" && (
+                  <button
+                    type="button"
+                    onClick={() => setFabPreviewCycle((cycle) => cycle + 1)}
+                    className="hover-reset-btn"
+                    aria-label="빠른 메뉴 애니메이션 미리보기 다시 재생"
+                    style={{
+                      position: "absolute",
+                      top: "10px",
+                      right: "10px",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "5px",
+                      padding: "7px 9px",
+                      borderRadius: "9px",
+                      border: "1px solid var(--border-strong)",
+                      background: "var(--bg-elev)",
+                      color: "var(--text-dim)",
+                      fontSize: "11.5px",
+                      fontWeight: 700,
+                      cursor: "pointer",
+                    }}
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M20 11a8 8 0 1 0-2.3 5.7" />
+                      <polyline points="20 4 20 11 13 11" />
+                    </svg>
+                    다시 재생
+                  </button>
+                )}
                 <div style={{ position: "absolute", right: "16px", bottom: "16px", display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "8px" }}>
                   {fabMode === "quick-menu" && (
-                    <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "7px" }}>
+                    <div
+                      key={`${fabAnim}-${fabPreviewCycle}`}
+                      data-fab="open"
+                      data-anim={fabAnim}
+                      style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "7px" }}
+                    >
                       {[
                         ["⚙", "설정"],
                         ["@", "메일"],
                         ["◐", "테마"],
                         ["AI", "채팅"],
                       ].map(([icon, label]) => (
-                        <div key={label} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "6px 10px 6px 7px", borderRadius: "999px", background: "var(--bg-elev)", border: "1px solid var(--border-strong)", boxShadow: "var(--shadow)", fontSize: "12px", fontWeight: 700 }}>
+                        <div
+                          key={label}
+                          data-fab-item
+                          style={{ display: "flex", alignItems: "center", gap: "8px", padding: "6px 10px 6px 7px", borderRadius: "999px", background: "var(--bg-elev)", border: "1px solid var(--border-strong)", boxShadow: "var(--shadow)", fontSize: "12px", fontWeight: 700 }}
+                        >
                           <span style={{ width: "25px", height: "25px", borderRadius: "50%", background: "var(--accent-soft, rgba(99,102,241,.14))", color: "var(--accent, #6366f1)", display: "grid", placeItems: "center", fontSize: "9px", fontWeight: 800 }}>
                             {icon}
                           </span>
@@ -488,6 +671,81 @@ export default function SettingsPage() {
                 </div>
               </div>
             </div>
+
+            {fabMode === "quick-menu" && (
+              <div
+                style={{
+                  marginTop: "20px",
+                  paddingTop: "18px",
+                  borderTop: "1px solid var(--border)",
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", marginBottom: "4px" }}>
+                  <span id="fab-animation-title" style={{ fontSize: "14.5px", fontWeight: 700 }}>
+                    빠른 메뉴 애니메이션
+                  </span>
+                  <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "12px", color: "var(--accent, #6366f1)", whiteSpace: "nowrap" }}>
+                    {FAB_ANIMATION_OPTIONS.find((option) => option.value === fabAnim)?.label}
+                  </span>
+                </div>
+                <div id="fab-animation-description" style={{ fontSize: "12.5px", color: "var(--text-mute)", marginBottom: "14px", lineHeight: 1.55 }}>
+                  빠른 기능이 열리고 닫힐 때의 효과예요. 닫을 때는 반대 순서로 재생됩니다.
+                </div>
+                <div
+                  role="radiogroup"
+                  aria-labelledby="fab-animation-title"
+                  aria-describedby="fab-animation-description"
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fit, minmax(145px, 1fr))",
+                    gap: "9px",
+                  }}
+                >
+                  {FAB_ANIMATION_OPTIONS.map((option) => {
+                    const active = fabAnim === option.value;
+                    return (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => setFabAnim(option.value)}
+                        role="radio"
+                        aria-checked={active}
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: "6px",
+                          minWidth: 0,
+                          padding: "12px 13px",
+                          borderRadius: "12px",
+                          textAlign: "left",
+                          cursor: "pointer",
+                          background: active
+                            ? "var(--accent-soft, rgba(99,102,241,.14))"
+                            : "var(--bg-elev-2)",
+                          border: active
+                            ? "1.5px solid var(--accent, #6366f1)"
+                            : "1.5px solid var(--border)",
+                        }}
+                      >
+                        <span style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "7px", width: "100%", fontSize: "13.5px", fontWeight: 700 }}>
+                          {option.label}
+                          {active && (
+                            <span style={{ width: "17px", height: "17px", borderRadius: "50%", background: "var(--accent, #6366f1)", color: "var(--accent-contrast, #fff)", display: "grid", placeItems: "center", flexShrink: 0 }}>
+                              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round">
+                                <polyline points="20 6 9 17 4 12" />
+                              </svg>
+                            </span>
+                          )}
+                        </span>
+                        <span style={{ fontSize: "11.5px", color: "var(--text-mute)", lineHeight: 1.45 }}>
+                          {option.description}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </section>
 
           {/* Background Glow */}

@@ -29,6 +29,7 @@ import styles from "./ChatWidget.module.css";
 const MOBILE_QUERY = "(max-width: 720px)";
 const BOTTOM_PIN_THRESHOLD_PX = 64;
 const KEYBOARD_SETTLE_DELAY_MS = 220;
+const QUICK_MENU_EXIT_DURATION_MS = 520;
 /** 젤리 엔진이 콘텐츠 래퍼를 찾을 때 쓰는 전역 클래스명(엔진 계약)이다. */
 const JELLY_CONTENT_CLASS = "chat-content-wrapper";
 
@@ -39,6 +40,8 @@ const AUDIENCE_PROMPTS: Readonly<Record<AudienceChoice, string>> = {
     "개발·기술 검토 관점에서 기술 스택, 구조와 검증 방식을 중심으로 소개해 주세요.",
   collaboration:
     "협업·의뢰 관점에서 맡길 수 있는 업무, 작업 방식과 결과물을 중심으로 소개해 주세요.",
+  personality: "성격과 취미, 평소 관심사를 소개해 주세요.",
+  values: "일과 협업, 삶에서 중요하게 생각하는 가치관을 알려 주세요.",
   casual: "처음 방문한 사람에게 포트폴리오의 핵심만 짧게 소개해 주세요.",
   default: "포트폴리오를 간단히 소개해 주세요.",
 };
@@ -183,7 +186,7 @@ function useVisualViewportStyle(
 }
 
 export function ChatWidget() {
-  const { fabMode, mode, setMode } = useTheme();
+  const { fabMode, fabAnim, motion, mode, setMode } = useTheme();
   const {
     isOpen,
     isClosing,
@@ -204,6 +207,7 @@ export function ChatWidget() {
     selectTone,
     setReasoningEnabled,
     refreshAvailability,
+    resetConversation,
     sendMessage,
     stopGenerating,
     retry,
@@ -211,8 +215,11 @@ export function ChatWidget() {
   } = useChat();
   const [draft, setDraft] = useState("");
   const [quickMenuOpen, setQuickMenuOpen] = useState(false);
+  const [quickMenuClosing, setQuickMenuClosing] = useState(false);
   const quickMenuEnabled = fabMode === "quick-menu";
-  const quickMenuVisible = quickMenuEnabled && quickMenuOpen && !isOpen;
+  const quickMenuExpanded = quickMenuEnabled && quickMenuOpen && !isOpen;
+  const quickMenuRendered =
+    quickMenuEnabled && (quickMenuOpen || quickMenuClosing) && !isOpen;
   const isMobile = useMobileViewport();
   const visualViewportStyle = useVisualViewportStyle(isMobile);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -228,6 +235,7 @@ export function ChatWidget() {
   const firstPinFrameRef = useRef(0);
   const secondPinFrameRef = useRef(0);
   const pinSettleTimerRef = useRef(0);
+  const quickMenuCloseTimerRef = useRef(0);
   const showOnboarding =
     availability === "online" &&
     messages.length === 1 &&
@@ -243,18 +251,64 @@ export function ChatWidget() {
       : null;
   }, [isLoading, messages]);
 
+  const clearQuickMenuCloseTimer = useCallback(() => {
+    window.clearTimeout(quickMenuCloseTimerRef.current);
+    quickMenuCloseTimerRef.current = 0;
+  }, []);
+
+  const dismissQuickMenuImmediately = useCallback(() => {
+    clearQuickMenuCloseTimer();
+    setQuickMenuOpen(false);
+    setQuickMenuClosing(false);
+  }, [clearQuickMenuCloseTimer]);
+
+  const openQuickMenu = useCallback(() => {
+    clearQuickMenuCloseTimer();
+    setQuickMenuClosing(false);
+    setQuickMenuOpen(true);
+  }, [clearQuickMenuCloseTimer]);
+
+  const closeQuickMenu = useCallback(() => {
+    if (!quickMenuOpen) return;
+
+    setQuickMenuOpen(false);
+    clearQuickMenuCloseTimer();
+    const reduceMotion =
+      fabAnim === "none" ||
+      motion === "off" ||
+      (motion === "system" &&
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+    if (reduceMotion) {
+      setQuickMenuClosing(false);
+      return;
+    }
+
+    setQuickMenuClosing(true);
+    quickMenuCloseTimerRef.current = window.setTimeout(() => {
+      setQuickMenuClosing(false);
+      quickMenuCloseTimerRef.current = 0;
+    }, QUICK_MENU_EXIT_DURATION_MS);
+  }, [clearQuickMenuCloseTimer, fabAnim, motion, quickMenuOpen]);
+
+  useEffect(
+    () => () => {
+      clearQuickMenuCloseTimer();
+    },
+    [clearQuickMenuCloseTimer],
+  );
+
   useEffect(() => {
-    if (!quickMenuVisible) return;
+    if (!quickMenuExpanded) return;
 
     const closeOnOutsidePointer = (event: PointerEvent) => {
       if (!rootRef.current?.contains(event.target as Node)) {
-        setQuickMenuOpen(false);
+        closeQuickMenu();
       }
     };
     const closeOnEscape = (event: globalThis.KeyboardEvent) => {
       if (event.key !== "Escape") return;
       event.preventDefault();
-      setQuickMenuOpen(false);
+      closeQuickMenu();
       window.requestAnimationFrame(() => triggerRef.current?.focus());
     };
 
@@ -264,7 +318,7 @@ export function ChatWidget() {
       document.removeEventListener("pointerdown", closeOnOutsidePointer);
       document.removeEventListener("keydown", closeOnEscape);
     };
-  }, [quickMenuVisible]);
+  }, [closeQuickMenu, quickMenuExpanded]);
 
   const cancelPinnedScroll = useCallback(() => {
     window.cancelAnimationFrame(firstPinFrameRef.current);
@@ -499,13 +553,13 @@ export function ChatWidget() {
   }[nextThemeMode];
 
   const openChatFromQuickMenu = () => {
-    setQuickMenuOpen(false);
+    dismissQuickMenuImmediately();
     open();
   };
 
   const cycleThemeMode = () => {
     setMode(nextThemeMode);
-    setQuickMenuOpen(false);
+    closeQuickMenu();
     window.requestAnimationFrame(() => triggerRef.current?.focus());
   };
 
@@ -515,10 +569,14 @@ export function ChatWidget() {
       return;
     }
     if (quickMenuEnabled) {
-      setQuickMenuOpen((current) => !current);
+      if (quickMenuExpanded) {
+        closeQuickMenu();
+      } else {
+        openQuickMenu();
+      }
       return;
     }
-    setQuickMenuOpen(false);
+    dismissQuickMenuImmediately();
     open();
   };
 
@@ -577,6 +635,24 @@ export function ChatWidget() {
                       </select>
                     </label>
                   )}
+                  <button
+                    className={styles.resetConversation}
+                    type="button"
+                    disabled={
+                      messages.length === 1 &&
+                      messages[0]?.kind === "greeting" &&
+                      audience === null &&
+                      error === null
+                    }
+                    onClick={() => {
+                      setDraft("");
+                      resetConversation();
+                    }}
+                    aria-label="새 대화 시작"
+                    title="새 대화 시작"
+                  >
+                    ↻
+                  </button>
                   <button
                     className={styles.close}
                     type="button"
@@ -778,7 +854,7 @@ export function ChatWidget() {
                       {message.kind === "greeting" && showOnboarding && (
                         <fieldset className={styles.onboarding}>
                           <legend>
-                            어떤 관점에서 보고 계신가요? 선택하면 맞춤 소개를 시작해요.
+                            어떤 내용이 궁금한가요? 선택하면 맞춤 소개를 시작해요.
                           </legend>
                           <div className={styles.audienceOptions}>
                             {AUDIENCE_OPTIONS.map((option) => (
@@ -899,16 +975,19 @@ export function ChatWidget() {
         </>
       )}
 
-      {quickMenuVisible && (
+      {quickMenuRendered && (
         <nav
           id="portfolio-quick-menu"
           className={styles.quickMenu}
           aria-label="빠른 실행"
+          data-fab={quickMenuClosing ? "closing" : "open"}
+          data-anim={fabAnim}
         >
           <Link
             href="/settings"
             className={styles.quickMenuAction}
-            onClick={() => setQuickMenuOpen(false)}
+            data-fab-item
+            onClick={dismissQuickMenuImmediately}
           >
             <span className={styles.quickMenuIcon} aria-hidden="true">
               ⚙
@@ -921,7 +1000,8 @@ export function ChatWidget() {
           <a
             href="mailto:sworksong@gmail.com"
             className={styles.quickMenuAction}
-            onClick={() => setQuickMenuOpen(false)}
+            data-fab-item
+            onClick={dismissQuickMenuImmediately}
           >
             <span className={styles.quickMenuIcon} aria-hidden="true">
               @
@@ -934,6 +1014,7 @@ export function ChatWidget() {
           <button
             type="button"
             className={styles.quickMenuAction}
+            data-fab-item
             onClick={cycleThemeMode}
             aria-label={`테마 변경: ${modeLabel}에서 ${nextModeLabel} 모드로`}
           >
@@ -950,6 +1031,7 @@ export function ChatWidget() {
           <button
             type="button"
             className={styles.quickMenuAction}
+            data-fab-item
             onClick={openChatFromQuickMenu}
           >
             <span className={styles.quickMenuIcon} aria-hidden="true">
@@ -966,11 +1048,11 @@ export function ChatWidget() {
       <button
         ref={triggerRef}
         className={`${styles.trigger} ${isOpen ? styles.triggerOpen : ""} ${
-          quickMenuVisible ? styles.triggerMenuOpen : ""
+          quickMenuExpanded ? styles.triggerMenuOpen : ""
         }`}
         type="button"
         onClick={handleTriggerClick}
-        aria-expanded={isOpen || quickMenuVisible}
+        aria-expanded={isOpen || quickMenuExpanded}
         aria-controls={
           isOpen || !quickMenuEnabled
             ? "portfolio-chat-dialog"
@@ -980,18 +1062,18 @@ export function ChatWidget() {
           isOpen
             ? "채팅 닫기"
             : quickMenuEnabled
-              ? quickMenuVisible
+              ? quickMenuExpanded
                 ? "빠른 메뉴 닫기"
                 : "빠른 메뉴 열기"
               : "포트폴리오 챗봇 열기"
         }
       >
         <span aria-hidden="true">
-          {quickMenuEnabled ? (quickMenuVisible ? "×" : "•••") : "AI"}
+          {quickMenuEnabled ? (quickMenuExpanded ? "×" : "•••") : "AI"}
         </span>
         <span>
           {quickMenuEnabled
-            ? quickMenuVisible
+            ? quickMenuExpanded
               ? "메뉴 닫기"
               : "빠른 메뉴"
             : "질문하기"}

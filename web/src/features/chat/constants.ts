@@ -9,7 +9,7 @@ import type {
 } from "./types";
 
 export const GREETING =
-  "안녕하세요. 포트폴리오를 안내하는 AI 챗봇입니다. 관심 있는 관점을 선택하거나 바로 질문해 주세요.";
+  "안녕하세요. 포트폴리오를 안내하는 AI 챗봇입니다. 관심 있는 주제를 선택하거나 바로 질문해 주세요.";
 
 export const TONE_STORAGE_KEY = "portfolio-chat-tone";
 export const STREAMING_STORAGE_KEY = "portfolio-chat-streaming";
@@ -138,12 +138,9 @@ export const AUDIENCE_OPTIONS: ReadonlyArray<{
     apiValue: "collaboration",
     label: "협업·의뢰 검토",
   },
+  { value: "personality", apiValue: "casual", label: "성격·취미" },
+  { value: "values", apiValue: "default", label: "가치관" },
   { value: "casual", apiValue: "casual", label: "가볍게 둘러보기" },
-  {
-    value: "default",
-    apiValue: "default",
-    label: "선택하지 않고 시작",
-  },
 ];
 
 export const ACTION_ROUTES: Readonly<Record<ActionId, string>> = {

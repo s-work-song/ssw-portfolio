@@ -3,6 +3,8 @@ export type AudienceChoice =
   | "recruiter"
   | "developer"
   | "collaboration"
+  | "personality"
+  | "values"
   | "casual";
 
 export type ApiAudience =

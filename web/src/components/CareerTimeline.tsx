@@ -8,7 +8,7 @@ import React from 'react';
 import type { CareerItem, TimelineDescription } from '@/types/career';
 
 export default function CareerTimeline({ items }: { items: CareerItem[] }) {
-  const [layoutMode, setLayoutMode] = React.useState<'right' | 'alternate' | 'center_period' | 'center_item'>('right');
+  const [layoutMode, setLayoutMode] = React.useState<'right' | 'alternate' | 'center_period' | 'center_item'>('center_period');
   const [isMobile, setIsMobile] = React.useState(false);
   const [expandedMap, setExpandedMap] = React.useState<Record<string, boolean>>({});
   const dragStartRef = React.useRef<{ x: number; y: number } | null>(null);
@@ -169,13 +169,13 @@ export default function CareerTimeline({ items }: { items: CareerItem[] }) {
       {/* ── 레이아웃 모드 토글 ── */}
       {!isMobile && (
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '28px', zIndex: 15, position: 'relative' }}>
-          <div style={{
+          <div role="radiogroup" aria-label="타임라인 배치" style={{
             background: 'var(--bg-elev-2, rgba(255,255,255,0.05))', padding: '3px',
             borderRadius: '10px', border: '1px solid var(--border)',
             display: 'inline-flex', gap: '2px', boxShadow: 'var(--shadow)'
           }}>
             {(['right', 'alternate', 'center_period', 'center_item'] as const).map(mode => (
-              <button key={mode} onClick={() => setLayoutMode(mode)} style={{
+              <button key={mode} onClick={() => setLayoutMode(mode)} role="radio" aria-checked={layoutMode === mode} style={{
                 padding: '6px 14px', border: 'none', borderRadius: '8px',
                 fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer',
                 transition: 'all 0.2s ease',
