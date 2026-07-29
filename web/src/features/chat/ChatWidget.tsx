@@ -553,9 +553,18 @@ export function ChatWidget() {
                     </span>
                     <span className={styles.availabilityBadge}>오프라인</span>
                     <h3>현재 챗봇을 이용할 수 없습니다</h3>
-                    <p>
-                      AI 추론 서버가 중지되어 있습니다. 포트폴리오의 다른
-                      내용은 정상적으로 둘러볼 수 있어요.
+                    <p className={styles.availabilityCopy}>
+                      <span>AI 추론 서버가 중지되어 있습니다.</span>
+                      <span>
+                        포트폴리오의 다른 내용은
+                        <br />
+                        정상적으로 둘러볼 수 있어요.
+                      </span>
+                      <span>
+                        실제 생성 답변 시연이 필요하면
+                        <br />
+                        포트폴리오에 공개된 연락처로 문의해 주세요.
+                      </span>
                     </p>
                     <button
                       type="button"

@@ -197,6 +197,15 @@
   word-break: keep-all;
 }
 
+.availabilityCopy {
+  display: grid;
+  gap: 8px;
+}
+
+.availabilityCopy span {
+  display: block;
+}
+
 .availabilityOfflineIcon {
   display: grid;
   width: 44px;
