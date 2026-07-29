@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 
 /**
  * GitHub Pages 프로젝트 페이지는 사이트가 저장소 이름 하위 경로에 놓인다.
- * 배포 워크플로가 NEXT_PUBLIC_BASE_PATH=/ssw-portfolio 를 넣어주고,
+ * 배포 워크플로가 NEXT_PUBLIC_BASE_PATH=/ssw-portfolio-public 을 넣어주고,
  * 로컬 개발·빌드에서는 비어 있어 루트 기준으로 동작한다.
  */
 const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";

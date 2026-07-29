@@ -46,11 +46,6 @@ next-env.d.ts
 # 작업용 원본 자료 — 공개 저장소에 올리지 않는다 (레포 밖에 별도 보관)
 **/.ref/
 
-# backend 로컬 캐시·임베딩 모델 (내려받은 산출물이라 저장소에 담지 않는다)
-backend/.cache/
-backend/.transformers-cache/
-backend/models/
-
 # 벤치마크(.NET) 빌드·측정 산출물 — 결과는 각 실험 README의 표로만 남긴다
 **/bin/
 **/obj/

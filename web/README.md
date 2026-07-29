@@ -13,7 +13,7 @@ npm run dev -w web
 ```
 
 챗봇을 붙이려면 `.env.example`을 복사해 `.env.local`을 만들고
-`NEXT_PUBLIC_RAG_API_BASE_URL`에 [backend](../backend/README.md) 주소를 넣습니다.
+`NEXT_PUBLIC_RAG_API_BASE_URL`에 비공개 저장소에서 배포한 RAG 백엔드 주소를 넣습니다.
 주소가 비어 있으면 사이트는 그대로 뜨고 챗봇만 안내 문구로 대체돼요.
 
 같은 Wi-Fi의 모바일에서 확인할 때는 `.env.local`에 노트북 IPv4를 `LOCAL_DEV_IP`로
@@ -40,6 +40,6 @@ API 키와 모델 서버 주소는 브라우저에 두지 않고 RAG 백엔드�
 
 ## 배포
 
-`.github/workflows/pages.yml`이 `NEXT_PUBLIC_BASE_PATH=/ssw-portfolio`를 주입해
+`.github/workflows/pages.yml`이 `NEXT_PUBLIC_BASE_PATH=/ssw-portfolio-public`을 주입해
 빌드하고 `out/`을 Pages 아티팩트로 올립니다. 프로젝트 페이지 하위 경로 문제는
 `next.config.ts`의 `basePath`가 처리해요.

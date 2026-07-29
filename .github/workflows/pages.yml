@@ -1,13 +1,11 @@
 # 진입 페이지(web)를 정적 export 해서 GitHub Pages에 배포한다.
 #
-# 배포 구조 (사이트 루트 = /ssw-portfolio/)
+# 배포 구조 (사이트 루트 = /ssw-portfolio-public/)
 #   /            → web 빌드 산출물 (포트폴리오)
 #   /<앱이름>/   → sample-apps 하위 웹 앱을 추가할 자리
 #
-# backend/는 정적 호스팅 대상이 아니라 별도 런타임에서 돌리므로 여기서 다루지 않는다.
-#
 # 웹 샘플 앱을 추가할 때는 build 잡에 빌드 + _site 복사 단계를 한 쌍 더 넣고,
-# 해당 앱의 base 경로를 /ssw-portfolio/<앱이름>/ 으로 맞추면 된다.
+# 해당 앱의 base 경로를 /ssw-portfolio-public/<앱이름>/ 으로 맞추면 된다.
 name: Deploy to GitHub Pages
 
 on:
@@ -15,7 +13,6 @@ on:
     branches: [dev, main]
     # 웹과 무관한 변경으로는 재배포하지 않는다.
     paths-ignore:
-      - "backend/**"
       - "benchmarks/**"
       - "services/**"
       - "sample-apps/dotnet-wpf-app/**"
@@ -38,7 +35,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       # 프로젝트 페이지의 하위 경로. next.config.ts가 basePath로 사용한다.
-      NEXT_PUBLIC_BASE_PATH: /ssw-portfolio
+      NEXT_PUBLIC_BASE_PATH: /ssw-portfolio-public
       # 챗봇이 호출할 RAG 백엔드 주소. 데모 기간에만 저장소 variable로 넣는다.
       # 비어 있으면 챗봇이 "채팅 서버 주소가 설정되지 않았습니다" 안내로 대체한다.
       NEXT_PUBLIC_RAG_API_BASE_URL: ${{ vars.NEXT_PUBLIC_RAG_API_BASE_URL }}
