@@ -16,7 +16,11 @@ import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import { useTheme } from "../../context/ThemeContext";
 import ElasticJellyPanel from "../../lib/ElasticJellyPanel";
-import { AUDIENCE_OPTIONS, TONE_OPTIONS } from "./constants";
+import {
+  AUDIENCE_OPTIONS,
+  REASONING_CONTROLS_ENABLED,
+  TONE_OPTIONS,
+} from "./constants";
 import { useChat } from "./ChatContext";
 import { StreamingText } from "./StreamingText";
 import type { AudienceChoice, ChatMessage } from "./types";
@@ -190,6 +194,7 @@ export function ChatWidget() {
     audience,
     tone,
     streamingEnabled,
+    reasoningEnabled,
     effectiveChatAnimation,
     effectiveStreamAnimation,
     open,
@@ -197,6 +202,7 @@ export function ChatWidget() {
     completeCloseAnimation,
     selectAudience,
     selectTone,
+    setReasoningEnabled,
     refreshAvailability,
     sendMessage,
     stopGenerating,
@@ -820,6 +826,29 @@ export function ChatWidget() {
 
               {availability === "online" && (
                 <>
+                  {REASONING_CONTROLS_ENABLED && (
+                    <div
+                      className={styles.composerOptions}
+                      aria-label="챗봇 응답 옵션"
+                    >
+                      <button
+                        type="button"
+                        className={styles.reasoningToggle}
+                        aria-pressed={reasoningEnabled}
+                        aria-label={`사고모드 ${reasoningEnabled ? "끄기" : "켜기"}`}
+                        disabled={isLoading}
+                        onClick={() => setReasoningEnabled(!reasoningEnabled)}
+                      >
+                        <span>사고모드</span>
+                        <strong>{reasoningEnabled ? "ON" : "OFF"}</strong>
+                      </button>
+                      <span className={styles.reasoningHint}>
+                        {reasoningEnabled
+                          ? "깊이 검토 · 응답이 느릴 수 있음"
+                          : "빠른 일반 응답"}
+                      </span>
+                    </div>
+                  )}
                   <form className={styles.composer} onSubmit={submit}>
                     <label
                       className={styles.visuallyHidden}

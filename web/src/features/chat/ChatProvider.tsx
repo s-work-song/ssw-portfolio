@@ -23,7 +23,9 @@ import {
   CHAT_STREAM_ANIMATIONS,
   DEFAULT_CHAT_ANIMATION,
   DEFAULT_CHAT_STREAM_ANIMATION,
+  DEFAULT_REASONING_ENABLED,
   GREETING,
+  REASONING_CONTROLS_ENABLED,
   REASONING_STORAGE_KEY,
   STREAMING_STORAGE_KEY,
   STREAM_ANIMATION_STORAGE_KEY,
@@ -165,7 +167,9 @@ export function ChatProvider({ children }: Readonly<{ children: ReactNode }>) {
   const [audience, setAudience] = useState<AudienceChoice | null>(null);
   const [tone, setTone] = useState<Tone>("official");
   const [streamingEnabled, setStreamingEnabledState] = useState(true);
-  const [reasoningEnabled, setReasoningEnabledState] = useState(true);
+  const [reasoningEnabled, setReasoningEnabledState] = useState(
+    DEFAULT_REASONING_ENABLED,
+  );
   const [chatAnimation, setChatAnimationState] = useState<ChatAnimation>(
     DEFAULT_CHAT_ANIMATION,
   );
@@ -197,6 +201,13 @@ export function ChatProvider({ children }: Readonly<{ children: ReactNode }>) {
   useEffect(() => {
     let updateTimer: number | undefined;
     try {
+      if (!REASONING_CONTROLS_ENABLED) {
+        window.localStorage.setItem(
+          REASONING_STORAGE_KEY,
+          String(DEFAULT_REASONING_ENABLED),
+        );
+        return;
+      }
       const stored = window.localStorage.getItem(REASONING_STORAGE_KEY);
       if (stored === "true" || stored === "false") {
         updateTimer = window.setTimeout(
@@ -204,10 +215,13 @@ export function ChatProvider({ children }: Readonly<{ children: ReactNode }>) {
           0,
         );
       } else if (stored !== null) {
-        window.localStorage.setItem(REASONING_STORAGE_KEY, "true");
+        window.localStorage.setItem(
+          REASONING_STORAGE_KEY,
+          String(DEFAULT_REASONING_ENABLED),
+        );
       }
     } catch {
-      // 저장소를 사용할 수 없어도 서버 기본값과 같은 사고모드 ON으로 동작한다.
+      // 저장소를 사용할 수 없어도 안전한 기본값인 사고모드 OFF로 동작한다.
     }
     return () => {
       if (updateTimer !== undefined) window.clearTimeout(updateTimer);
@@ -759,9 +773,15 @@ export function ChatProvider({ children }: Readonly<{ children: ReactNode }>) {
   }, []);
 
   const setReasoningEnabled = useCallback((enabled: boolean) => {
-    setReasoningEnabledState(enabled);
+    const nextEnabled = REASONING_CONTROLS_ENABLED
+      ? enabled
+      : DEFAULT_REASONING_ENABLED;
+    setReasoningEnabledState(nextEnabled);
     try {
-      window.localStorage.setItem(REASONING_STORAGE_KEY, String(enabled));
+      window.localStorage.setItem(
+        REASONING_STORAGE_KEY,
+        String(nextEnabled),
+      );
     } catch {
       // 저장 실패가 현재 브라우저 세션의 설정 변경을 막지는 않는다.
     }

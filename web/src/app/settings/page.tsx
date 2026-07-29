@@ -13,6 +13,8 @@ import {
   CHAT_STREAM_ANIMATION_OPTIONS,
   DEFAULT_CHAT_ANIMATION,
   DEFAULT_CHAT_STREAM_ANIMATION,
+  DEFAULT_REASONING_ENABLED,
+  REASONING_CONTROLS_ENABLED,
   StreamingText,
   useChat,
 } from "../../features/chat";
@@ -99,7 +101,7 @@ export default function SettingsPage() {
   const resetAllSettings = () => {
     resetTheme();
     setStreamingEnabled(true);
-    setReasoningEnabled(true);
+    setReasoningEnabled(DEFAULT_REASONING_ENABLED);
     setChatAnimation(DEFAULT_CHAT_ANIMATION);
     setStreamAnimation(DEFAULT_CHAT_STREAM_ANIMATION);
   };
@@ -583,51 +585,53 @@ export default function SettingsPage() {
                 />
               </button>
             </div>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "14px", padding: "14px 16px", marginTop: "10px", borderRadius: "13px", background: "var(--bg-elev-2)", border: "1px solid var(--border)" }}>
-              <div>
-                <div id="chat-reasoning-title" style={{ fontSize: "14.5px", fontWeight: 600 }}>사고모드</div>
-                <div id="chat-reasoning-description" style={{ fontSize: "12.5px", color: "var(--text-mute)", marginTop: "2px", lineHeight: 1.5 }}>
-                  {reasoningEnabled
-                    ? "복잡한 질문을 더 깊게 검토 · 응답 시간이 길어질 수 있음"
-                    : "빠른 일반 응답 · 내부 추론 단계 생략"}
+            {REASONING_CONTROLS_ENABLED && (
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "14px", padding: "14px 16px", marginTop: "10px", borderRadius: "13px", background: "var(--bg-elev-2)", border: "1px solid var(--border)" }}>
+                <div>
+                  <div id="chat-reasoning-title" style={{ fontSize: "14.5px", fontWeight: 600 }}>사고모드</div>
+                  <div id="chat-reasoning-description" style={{ fontSize: "12.5px", color: "var(--text-mute)", marginTop: "2px", lineHeight: 1.5 }}>
+                    {reasoningEnabled
+                      ? "복잡한 질문을 더 깊게 검토 · 응답 시간이 길어질 수 있음"
+                      : "빠른 일반 응답 · 내부 추론 단계 생략"}
+                  </div>
                 </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setReasoningEnabled(!reasoningEnabled)}
-                role="switch"
-                aria-checked={reasoningEnabled}
-                aria-labelledby="chat-reasoning-title"
-                aria-describedby="chat-reasoning-description"
-                style={{
-                  width: "48px",
-                  height: "27px",
-                  borderRadius: "999px",
-                  position: "relative",
-                  cursor: "pointer",
-                  transition: "background .2s",
-                  border: "1px solid var(--border-strong)",
-                  flexShrink: 0,
-                  background: reasoningEnabled ? "var(--accent, #6366f1)" : "var(--bg-elev)",
-                }}
-              >
-                <span
-                  aria-hidden="true"
+                <button
+                  type="button"
+                  onClick={() => setReasoningEnabled(!reasoningEnabled)}
+                  role="switch"
+                  aria-checked={reasoningEnabled}
+                  aria-labelledby="chat-reasoning-title"
+                  aria-describedby="chat-reasoning-description"
                   style={{
-                    position: "absolute",
-                    top: "2px",
-                    left: "2px",
-                    width: "21px",
-                    height: "21px",
-                    borderRadius: "50%",
-                    background: "#fff",
-                    boxShadow: "0 1px 3px rgba(0,0,0,.3)",
-                    transition: "transform .2s",
-                    transform: reasoningEnabled ? "translateX(21px)" : "none",
+                    width: "48px",
+                    height: "27px",
+                    borderRadius: "999px",
+                    position: "relative",
+                    cursor: "pointer",
+                    transition: "background .2s",
+                    border: "1px solid var(--border-strong)",
+                    flexShrink: 0,
+                    background: reasoningEnabled ? "var(--accent, #6366f1)" : "var(--bg-elev)",
                   }}
-                />
-              </button>
-            </div>
+                >
+                  <span
+                    aria-hidden="true"
+                    style={{
+                      position: "absolute",
+                      top: "2px",
+                      left: "2px",
+                      width: "21px",
+                      height: "21px",
+                      borderRadius: "50%",
+                      background: "#fff",
+                      boxShadow: "0 1px 3px rgba(0,0,0,.3)",
+                      transition: "transform .2s",
+                      transform: reasoningEnabled ? "translateX(21px)" : "none",
+                    }}
+                  />
+                </button>
+              </div>
+            )}
           </section>
 
           {/* 응답 텍스트 애니메이션 */}

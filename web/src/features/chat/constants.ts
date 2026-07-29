@@ -16,6 +16,13 @@ export const STREAMING_STORAGE_KEY = "portfolio-chat-streaming";
 export const REASONING_STORAGE_KEY = "portfolio-chat-reasoning";
 export const CHAT_ANIMATION_STORAGE_KEY = "portfolio-chat-animation";
 
+/**
+ * Gemma 4 사고모드 계약은 유지하되 공개 UI에서는 당분간 숨긴다.
+ * 다시 노출할 때 이 값만 켜면 설정과 채팅 퀵 토글이 함께 복구된다.
+ */
+export const REASONING_CONTROLS_ENABLED = false;
+export const DEFAULT_REASONING_ENABLED = false;
+
 export const TONES: readonly Tone[] = ["official", "manager", "mascot"];
 
 export const CHAT_ANIMATIONS: readonly ChatAnimation[] = [
