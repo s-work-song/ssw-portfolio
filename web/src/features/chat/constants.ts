@@ -13,6 +13,7 @@ export const GREETING =
 
 export const TONE_STORAGE_KEY = "portfolio-chat-tone";
 export const STREAMING_STORAGE_KEY = "portfolio-chat-streaming";
+export const REASONING_STORAGE_KEY = "portfolio-chat-reasoning";
 export const CHAT_ANIMATION_STORAGE_KEY = "portfolio-chat-animation";
 
 export const TONES: readonly Tone[] = ["official", "manager", "mascot"];

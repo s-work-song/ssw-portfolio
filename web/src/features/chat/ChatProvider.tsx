@@ -24,6 +24,7 @@ import {
   DEFAULT_CHAT_ANIMATION,
   DEFAULT_CHAT_STREAM_ANIMATION,
   GREETING,
+  REASONING_STORAGE_KEY,
   STREAMING_STORAGE_KEY,
   STREAM_ANIMATION_STORAGE_KEY,
   TONES,
@@ -164,6 +165,7 @@ export function ChatProvider({ children }: Readonly<{ children: ReactNode }>) {
   const [audience, setAudience] = useState<AudienceChoice | null>(null);
   const [tone, setTone] = useState<Tone>("official");
   const [streamingEnabled, setStreamingEnabledState] = useState(true);
+  const [reasoningEnabled, setReasoningEnabledState] = useState(true);
   const [chatAnimation, setChatAnimationState] = useState<ChatAnimation>(
     DEFAULT_CHAT_ANIMATION,
   );
@@ -190,6 +192,26 @@ export function ChatProvider({ children }: Readonly<{ children: ReactNode }>) {
   const nextId = useCallback((prefix: string) => {
     idRef.current += 1;
     return `${prefix}-${idRef.current}`;
+  }, []);
+
+  useEffect(() => {
+    let updateTimer: number | undefined;
+    try {
+      const stored = window.localStorage.getItem(REASONING_STORAGE_KEY);
+      if (stored === "true" || stored === "false") {
+        updateTimer = window.setTimeout(
+          () => setReasoningEnabledState(stored === "true"),
+          0,
+        );
+      } else if (stored !== null) {
+        window.localStorage.setItem(REASONING_STORAGE_KEY, "true");
+      }
+    } catch {
+      // 저장소를 사용할 수 없어도 서버 기본값과 같은 사고모드 ON으로 동작한다.
+    }
+    return () => {
+      if (updateTimer !== undefined) window.clearTimeout(updateTimer);
+    };
   }, []);
 
   useEffect(() => {
@@ -544,6 +566,7 @@ export function ChatProvider({ children }: Readonly<{ children: ReactNode }>) {
         audience: audienceToApi(pending.audienceOverride ?? audience),
         tone,
         pageContext,
+        reasoningEnabled,
       };
       const shouldStream = streamingEnabled;
       let streamingMessageId: string | undefined;
@@ -652,7 +675,6 @@ export function ChatProvider({ children }: Readonly<{ children: ReactNode }>) {
           );
         }
         retryRef.current = pending;
-        void refreshAvailability();
         setError(
           requestError instanceof ChatApiError
             ? requestError.message
@@ -669,7 +691,7 @@ export function ChatProvider({ children }: Readonly<{ children: ReactNode }>) {
       audience,
       nextId,
       pageContext,
-      refreshAvailability,
+      reasoningEnabled,
       streamingEnabled,
       tone,
     ],
@@ -736,6 +758,15 @@ export function ChatProvider({ children }: Readonly<{ children: ReactNode }>) {
     }
   }, []);
 
+  const setReasoningEnabled = useCallback((enabled: boolean) => {
+    setReasoningEnabledState(enabled);
+    try {
+      window.localStorage.setItem(REASONING_STORAGE_KEY, String(enabled));
+    } catch {
+      // 저장 실패가 현재 브라우저 세션의 설정 변경을 막지는 않는다.
+    }
+  }, []);
+
   const setChatAnimation = useCallback((animation: ChatAnimation) => {
     if (!CHAT_ANIMATIONS.includes(animation)) return;
     setChatAnimationState(animation);
@@ -797,6 +828,7 @@ export function ChatProvider({ children }: Readonly<{ children: ReactNode }>) {
       audience,
       tone,
       streamingEnabled,
+      reasoningEnabled,
       chatAnimation,
       effectiveChatAnimation,
       streamAnimation,
@@ -808,6 +840,7 @@ export function ChatProvider({ children }: Readonly<{ children: ReactNode }>) {
       selectAudience: setAudience,
       selectTone,
       setStreamingEnabled,
+      setReasoningEnabled,
       setChatAnimation,
       setStreamAnimation,
       refreshAvailability,
@@ -833,7 +866,9 @@ export function ChatProvider({ children }: Readonly<{ children: ReactNode }>) {
       completeCloseAnimation,
       retry,
       refreshAvailability,
+      reasoningEnabled,
       setChatAnimation,
+      setReasoningEnabled,
       setStreamAnimation,
       setStreamingEnabled,
       selectTone,

@@ -110,6 +110,7 @@ export interface ChatRequest {
   audience: ApiAudience;
   tone: Tone;
   pageContext: PageContext;
+  reasoningEnabled: boolean;
 }
 
 export interface ChatStatusResponse {

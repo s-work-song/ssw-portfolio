@@ -21,6 +21,7 @@ export interface ChatContextValue {
   audience: AudienceChoice | null;
   tone: Tone;
   streamingEnabled: boolean;
+  reasoningEnabled: boolean;
   /** 사용자가 설정 화면에서 고른 값 그대로다. 설정 UI가 이 값을 표시한다. */
   chatAnimation: ChatAnimation;
   /** 모션 정책까지 반영한 실제 재생 값이다. 위젯은 이 값으로 연출을 고른다. */
@@ -36,6 +37,7 @@ export interface ChatContextValue {
   selectAudience: (audience: AudienceChoice) => void;
   selectTone: (tone: Tone) => void;
   setStreamingEnabled: (enabled: boolean) => void;
+  setReasoningEnabled: (enabled: boolean) => void;
   setChatAnimation: (animation: ChatAnimation) => void;
   setStreamAnimation: (animation: ChatStreamAnimation) => void;
   refreshAvailability: () => Promise<void>;
