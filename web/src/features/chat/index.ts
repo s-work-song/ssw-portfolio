@@ -1,4 +1,5 @@
 export { ChatProvider } from "./ChatProvider";
+export { StreamingText } from "./StreamingText";
 export { useChat } from "./ChatContext";
 export {
   CHAT_ANIMATION_OPTIONS,

@@ -9,7 +9,7 @@
  * 각 span의 key는 메시지 안에서의 절대 오프셋이라, 창이 밀려도 이미 붙은 span은
  * 그대로 유지된다. 그래서 새로 마운트되는 조각만 CSS 애니메이션이 한 번 재생된다.
  */
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import styles from "./ChatWidget.module.css";
 import type { ChatStreamAnimation } from "./types";
 
@@ -55,6 +55,21 @@ const PIECE_CLASS: Partial<Record<ChatStreamAnimation, string>> = {
   "letter-drop": styles.streamLetterDrop,
   "highlight-trail": styles.streamHighlightTrail,
 };
+
+/** CSS에 정의된 기본 효과 시간을 미리보기 재생 배율과 함께 사용한다. */
+const PIECE_DURATION_MS: Partial<Record<ChatStreamAnimation, number>> = {
+  "word-fade": 320,
+  "blur-focus": 420,
+  "slide-up": 380,
+  "token-chunks": 520,
+  "mask-wipe": 260,
+  "letter-drop": 300,
+  "highlight-trail": 700,
+};
+
+const CURSOR_DURATION_MS = 1_000;
+const BLOCK_CURSOR_DURATION_MS = 900;
+const SKELETON_DURATION_MS = 1_400;
 
 interface TailPiece {
   /** 메시지 안에서의 절대 오프셋. span의 key로 쓴다. */
@@ -171,24 +186,41 @@ interface StreamingTextProps {
   animation: ChatStreamAnimation;
   /** 아직 delta가 도착하는 중인지. 커서·스켈레톤·스크램블 타이머를 좌우한다. */
   isStreaming: boolean;
+  /**
+   * 설정 미리보기의 재생 배율. 실제 채팅은 기본값 1을 사용한다.
+   * 글자 도착 속도와 CSS 효과 시간을 같은 배율로 맞춰 효과의 의도를 비교할 수 있다.
+   */
+  playbackRate?: number;
 }
 
 export function StreamingText({
   text,
   animation,
   isStreaming,
+  playbackRate = 1,
 }: Readonly<StreamingTextProps>) {
   const [scrambleTick, setScrambleTick] = useState(0);
   const scrambling = animation === "scramble" && isStreaming;
+  const safePlaybackRate =
+    Number.isFinite(playbackRate) && playbackRate > 0
+      ? Math.min(4, Math.max(0.25, playbackRate))
+      : 1;
+
+  const animationDurationStyle = (
+    durationMs: number | undefined,
+  ): CSSProperties | undefined =>
+    durationMs === undefined || safePlaybackRate === 1
+      ? undefined
+      : { animationDuration: `${durationMs / safePlaybackRate}ms` };
 
   useEffect(() => {
     if (!scrambling) return;
     const timer = window.setInterval(
       () => setScrambleTick((tick) => tick + 1),
-      SCRAMBLE_INTERVAL_MS,
+      Math.max(16, Math.round(SCRAMBLE_INTERVAL_MS / safePlaybackRate)),
     );
     return () => window.clearInterval(timer);
-  }, [scrambling]);
+  }, [safePlaybackRate, scrambling]);
 
   const split = useMemo<TailSplit | null>(() => {
     if (WORD_ANIMATIONS.has(animation)) {
@@ -211,7 +243,11 @@ export function StreamingText({
       <>
         {text}
         {isStreaming && (
-          <span className={styles.streamCursor} aria-hidden="true" />
+          <span
+            className={styles.streamCursor}
+            style={animationDurationStyle(CURSOR_DURATION_MS)}
+            aria-hidden="true"
+          />
         )}
       </>
     );
@@ -222,7 +258,11 @@ export function StreamingText({
       <>
         {text}
         {isStreaming && (
-          <span className={styles.streamSkeleton} aria-hidden="true" />
+          <span
+            className={styles.streamSkeleton}
+            style={animationDurationStyle(SKELETON_DURATION_MS)}
+            aria-hidden="true"
+          />
         )}
       </>
     );
@@ -244,7 +284,11 @@ export function StreamingText({
           ),
         )}
         {isStreaming && (
-          <span className={styles.streamBlockCursor} aria-hidden="true" />
+          <span
+            className={styles.streamBlockCursor}
+            style={animationDurationStyle(BLOCK_CURSOR_DURATION_MS)}
+            aria-hidden="true"
+          />
         )}
       </>
     );
@@ -261,12 +305,21 @@ export function StreamingText({
         <span
           key={piece.key}
           className={piece.blank ? undefined : pieceClass}
+          style={
+            piece.blank
+              ? undefined
+              : animationDurationStyle(PIECE_DURATION_MS[animation])
+          }
         >
           {piece.value}
         </span>
       ))}
       {isStreaming && animation === "token-chunks" && (
-        <span className={styles.streamCursor} aria-hidden="true" />
+        <span
+          className={styles.streamCursor}
+          style={animationDurationStyle(CURSOR_DURATION_MS)}
+          aria-hidden="true"
+        />
       )}
       {isStreaming && animation === "mask-wipe" && (
         <span className={styles.streamWipeEdge} aria-hidden="true" />

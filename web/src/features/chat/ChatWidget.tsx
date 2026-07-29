@@ -12,7 +12,9 @@ import {
   type FormEvent,
   type KeyboardEvent,
 } from "react";
+import Link from "next/link";
 import ReactMarkdown from "react-markdown";
+import { useTheme } from "../../context/ThemeContext";
 import ElasticJellyPanel from "../../lib/ElasticJellyPanel";
 import { AUDIENCE_OPTIONS, TONE_OPTIONS } from "./constants";
 import { useChat } from "./ChatContext";
@@ -177,6 +179,7 @@ function useVisualViewportStyle(
 }
 
 export function ChatWidget() {
+  const { fabMode, mode, setMode } = useTheme();
   const {
     isOpen,
     isClosing,
@@ -201,8 +204,12 @@ export function ChatWidget() {
     navigateAction,
   } = useChat();
   const [draft, setDraft] = useState("");
+  const [quickMenuOpen, setQuickMenuOpen] = useState(false);
+  const quickMenuEnabled = fabMode === "quick-menu";
+  const quickMenuVisible = quickMenuEnabled && quickMenuOpen && !isOpen;
   const isMobile = useMobileViewport();
   const visualViewportStyle = useVisualViewportStyle(isMobile);
+  const rootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -229,6 +236,29 @@ export function ChatWidget() {
       ? latestMessage.id
       : null;
   }, [isLoading, messages]);
+
+  useEffect(() => {
+    if (!quickMenuVisible) return;
+
+    const closeOnOutsidePointer = (event: PointerEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) {
+        setQuickMenuOpen(false);
+      }
+    };
+    const closeOnEscape = (event: globalThis.KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      setQuickMenuOpen(false);
+      window.requestAnimationFrame(() => triggerRef.current?.focus());
+    };
+
+    document.addEventListener("pointerdown", closeOnOutsidePointer);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("pointerdown", closeOnOutsidePointer);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [quickMenuVisible]);
 
   const cancelPinnedScroll = useCallback(() => {
     window.cancelAnimationFrame(firstPinFrameRef.current);
@@ -449,9 +479,45 @@ export function ChatWidget() {
     isJelly ? ` ${JELLY_CONTENT_CLASS}` : ""
   }`;
   const rootClassName = `${styles.root} ${isOpen ? styles.rootOpen : ""}`;
+  const nextThemeMode =
+    mode === "system" ? "light" : mode === "light" ? "dark" : "system";
+  const modeLabel = {
+    system: "시스템",
+    light: "라이트",
+    dark: "다크",
+  }[mode];
+  const nextModeLabel = {
+    system: "시스템",
+    light: "라이트",
+    dark: "다크",
+  }[nextThemeMode];
+
+  const openChatFromQuickMenu = () => {
+    setQuickMenuOpen(false);
+    open();
+  };
+
+  const cycleThemeMode = () => {
+    setMode(nextThemeMode);
+    setQuickMenuOpen(false);
+    window.requestAnimationFrame(() => triggerRef.current?.focus());
+  };
+
+  const handleTriggerClick = () => {
+    if (isOpen) {
+      close();
+      return;
+    }
+    if (quickMenuEnabled) {
+      setQuickMenuOpen((current) => !current);
+      return;
+    }
+    setQuickMenuOpen(false);
+    open();
+  };
 
   return (
-    <div className={rootClassName} style={visualViewportStyle}>
+    <div ref={rootRef} className={rootClassName} style={visualViewportStyle}>
       {isOpen && (
         <>
           <button
@@ -804,17 +870,103 @@ export function ChatWidget() {
         </>
       )}
 
+      {quickMenuVisible && (
+        <nav
+          id="portfolio-quick-menu"
+          className={styles.quickMenu}
+          aria-label="빠른 실행"
+        >
+          <Link
+            href="/settings"
+            className={styles.quickMenuAction}
+            onClick={() => setQuickMenuOpen(false)}
+          >
+            <span className={styles.quickMenuIcon} aria-hidden="true">
+              ⚙
+            </span>
+            <span className={styles.quickMenuCopy}>
+              <strong>설정</strong>
+              <small>사이트 옵션 열기</small>
+            </span>
+          </Link>
+          <a
+            href="mailto:sworksong@gmail.com"
+            className={styles.quickMenuAction}
+            onClick={() => setQuickMenuOpen(false)}
+          >
+            <span className={styles.quickMenuIcon} aria-hidden="true">
+              @
+            </span>
+            <span className={styles.quickMenuCopy}>
+              <strong>메일 보내기</strong>
+              <small>sworksong@gmail.com</small>
+            </span>
+          </a>
+          <button
+            type="button"
+            className={styles.quickMenuAction}
+            onClick={cycleThemeMode}
+            aria-label={`테마 변경: ${modeLabel}에서 ${nextModeLabel} 모드로`}
+          >
+            <span className={styles.quickMenuIcon} aria-hidden="true">
+              ◐
+            </span>
+            <span className={styles.quickMenuCopy}>
+              <strong>테마 변경</strong>
+              <small>
+                {modeLabel} → {nextModeLabel}
+              </small>
+            </span>
+          </button>
+          <button
+            type="button"
+            className={styles.quickMenuAction}
+            onClick={openChatFromQuickMenu}
+          >
+            <span className={styles.quickMenuIcon} aria-hidden="true">
+              AI
+            </span>
+            <span className={styles.quickMenuCopy}>
+              <strong>채팅</strong>
+              <small>포트폴리오에 질문하기</small>
+            </span>
+          </button>
+        </nav>
+      )}
+
       <button
         ref={triggerRef}
-        className={`${styles.trigger} ${isOpen ? styles.triggerOpen : ""}`}
+        className={`${styles.trigger} ${isOpen ? styles.triggerOpen : ""} ${
+          quickMenuVisible ? styles.triggerMenuOpen : ""
+        }`}
         type="button"
-        onClick={isOpen ? close : open}
-        aria-expanded={isOpen}
-        aria-controls="portfolio-chat-dialog"
-        aria-label={isOpen ? "채팅 닫기" : "포트폴리오 챗봇 열기"}
+        onClick={handleTriggerClick}
+        aria-expanded={isOpen || quickMenuVisible}
+        aria-controls={
+          isOpen || !quickMenuEnabled
+            ? "portfolio-chat-dialog"
+            : "portfolio-quick-menu"
+        }
+        aria-label={
+          isOpen
+            ? "채팅 닫기"
+            : quickMenuEnabled
+              ? quickMenuVisible
+                ? "빠른 메뉴 닫기"
+                : "빠른 메뉴 열기"
+              : "포트폴리오 챗봇 열기"
+        }
       >
-        <span aria-hidden="true">AI</span>
-        <span>질문하기</span>
+        <span aria-hidden="true">
+          {quickMenuEnabled ? (quickMenuVisible ? "×" : "•••") : "AI"}
+        </span>
+        <span>
+          {quickMenuEnabled
+            ? quickMenuVisible
+              ? "메뉴 닫기"
+              : "빠른 메뉴"
+            : "질문하기"}
+        </span>
       </button>
     </div>
   );
