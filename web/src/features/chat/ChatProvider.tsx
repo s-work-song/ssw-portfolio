@@ -52,6 +52,8 @@ const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
 const MOBILE_HISTORY_MARKER = "__portfolioChatOpen";
 const MOBILE_EXIT_DURATION_MS = 260;
 const CHAT_STATUS_TIMEOUT_MS = 5_000;
+const STREAM_RENDER_CHUNK_CHARACTERS = 8;
+const STREAM_RENDER_INTERVAL_MS = 48;
 
 /**
  * PC 패널이 퇴장 연출을 끝낼 때까지 DOM을 유지할 시간이다.
@@ -64,6 +66,29 @@ const DESKTOP_EXIT_DURATION_MS: Readonly<
   slide: 240,
   jelly: 620,
 };
+
+function splitStreamDelta(text: string): string[] {
+  const characters = Array.from(text);
+  const chunks: string[] = [];
+  for (
+    let index = 0;
+    index < characters.length;
+    index += STREAM_RENDER_CHUNK_CHARACTERS
+  ) {
+    chunks.push(
+      characters
+        .slice(index, index + STREAM_RENDER_CHUNK_CHARACTERS)
+        .join(""),
+    );
+  }
+  return chunks;
+}
+
+function waitForStreamRenderInterval(): Promise<void> {
+  return new Promise((resolve) => {
+    window.setTimeout(resolve, STREAM_RENDER_INTERVAL_MS);
+  });
+}
 
 function initialMessages(): ChatMessage[] {
   return [
@@ -522,16 +547,8 @@ export function ChatProvider({ children }: Readonly<{ children: ReactNode }>) {
       };
       const shouldStream = streamingEnabled;
       let streamingMessageId: string | undefined;
-      let pendingDelta = "";
-      let deltaTimer: number | null = null;
 
-      const flushDelta = () => {
-        if (deltaTimer !== null) {
-          window.clearTimeout(deltaTimer);
-          deltaTimer = null;
-        }
-        const text = pendingDelta;
-        pendingDelta = "";
+      const appendStreamDelta = (text: string) => {
         if (!text || !streamingMessageId) return;
         setMessages((current) =>
           current.map((chatMessage) =>
@@ -563,15 +580,20 @@ export function ChatProvider({ children }: Readonly<{ children: ReactNode }>) {
       try {
         const response = shouldStream
           ? await requestChatStream(request, controller.signal, {
-              onDelta(text) {
-                pendingDelta += text;
-                if (deltaTimer === null) {
-                  deltaTimer = window.setTimeout(flushDelta, 32);
+              async onDelta(text) {
+                for (const chunk of splitStreamDelta(text)) {
+                  if (controller.signal.aborted) {
+                    throw new DOMException(
+                      "The operation was aborted.",
+                      "AbortError",
+                    );
+                  }
+                  appendStreamDelta(chunk);
+                  await waitForStreamRenderInterval();
                 }
               },
             })
           : await requestChat(request, controller.signal);
-        flushDelta();
         if (response.status === "upstream_offline") {
           setAvailability("offline");
         }
@@ -599,7 +621,6 @@ export function ChatProvider({ children }: Readonly<{ children: ReactNode }>) {
         );
         retryRef.current = null;
       } catch (requestError) {
-        flushDelta();
         const requestWasAborted =
           controller.signal.aborted ||
           (requestError instanceof DOMException &&
@@ -638,7 +659,6 @@ export function ChatProvider({ children }: Readonly<{ children: ReactNode }>) {
             : "요청을 처리하지 못했습니다. 다시 시도해 주세요.",
         );
       } finally {
-        if (deltaTimer !== null) window.clearTimeout(deltaTimer);
         if (abortRef.current === controller) abortRef.current = null;
         stopRequestedRef.current = false;
         inFlightRef.current = false;

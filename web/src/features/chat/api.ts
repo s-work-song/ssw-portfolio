@@ -27,8 +27,6 @@ const PAGE_CONTEXTS: readonly PageContext[] = [
   "log",
 ];
 
-const BUFFERED_STREAM_DELTA_INTERVAL_MS = 12;
-
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
@@ -255,7 +253,7 @@ export async function requestChat(
 }
 
 export interface ChatStreamHandlers {
-  onDelta: (text: string) => void;
+  onDelta: (text: string) => void | Promise<void>;
   onMeta?: (meta: Readonly<Record<string, unknown>>) => void;
 }
 
@@ -377,12 +375,9 @@ export async function requestChatStream(
       if (!isRecord(payload) || !isString(payload.text)) {
         throw new ChatApiError("스트리밍 본문 형식을 확인할 수 없습니다.");
       }
-      handlers.onDelta(payload.text);
-      // Sites나 중간 프록시가 여러 SSE 이벤트를 한 네트워크 청크로
-      // 합쳐도 React가 중간 상태를 그릴 수 있도록 이벤트 루프를 양보한다.
-      await new Promise<void>((resolve) => {
-        setTimeout(resolve, BUFFERED_STREAM_DELTA_INTERVAL_MS);
-      });
+      // 중간 프록시가 여러 SSE 이벤트를 한 네트워크 청크로 합치더라도
+      // 표현 계층이 각 delta를 순차적으로 그릴 수 있도록 완료를 기다린다.
+      await handlers.onDelta(payload.text);
       if (signal.aborted) {
         throw new DOMException("The operation was aborted.", "AbortError");
       }
