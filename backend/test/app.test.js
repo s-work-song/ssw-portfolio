@@ -133,6 +133,58 @@ test("health, OPTIONS, retrieve, chat을 제공하고 health는 upstream을 부�
   assert.equal(calls, 1);
 });
 
+test("chat status는 실제 upstream 확인 결과를 짧게 캐시하고 상세 오류를 숨긴다", async (t) => {
+  const knowledgeDir = await fixture(t);
+  let onlineChecks = 0;
+  const onlineHandler = await createApp({
+    config: baseConfig,
+    knowledgeDir,
+    upstreamClient: {
+      async checkAvailability() {
+        onlineChecks += 1;
+        return true;
+      },
+      async chat() {
+        return "unused";
+      },
+    },
+  });
+  const onlineApi = await listen(onlineHandler);
+  t.after(onlineApi.close);
+
+  const first = await fetch(`${onlineApi.url}/api/chat/status`);
+  const firstPayload = await first.json();
+  assert.equal(first.status, 200);
+  assert.equal(first.headers.get("cache-control"), "no-store");
+  assert.equal(firstPayload.status, "online");
+  assert.equal(typeof firstPayload.checkedAt, "string");
+
+  const second = await fetch(`${onlineApi.url}/api/chat/status`);
+  assert.equal((await second.json()).status, "online");
+  assert.equal(onlineChecks, 1);
+
+  const offlineHandler = await createApp({
+    config: baseConfig,
+    knowledgeDir,
+    upstreamClient: {
+      async checkAvailability() {
+        throw new UpstreamError("network", "SECRET upstream details");
+      },
+      async chat() {
+        return "unused";
+      },
+    },
+  });
+  const offlineApi = await listen(offlineHandler);
+  t.after(offlineApi.close);
+
+  const offline = await fetch(`${offlineApi.url}/api/chat/status`);
+  const offlinePayload = await offline.json();
+  assert.equal(offline.status, 200);
+  assert.equal(offlinePayload.status, "offline");
+  assert.equal(JSON.stringify(offlinePayload).includes("SECRET"), false);
+});
+
 test("backend dense mode를 fake provider로 주입하고 health/cache identity를 분리한다", async (t) => {
   const knowledgeDir = await fixture(t);
   const handler = await createApp({
@@ -750,6 +802,43 @@ test("OpenAI-compatible client가 로컬 mock /v1/chat/completions를 호출한�
   assert.equal(answer, "mock answer");
   assert.equal(requestPath, "/v1/chat/completions");
   assert.equal(authorization, "Bearer test-key");
+});
+
+test("OpenAI-compatible client가 /v1/models에서 설정 모델 가용성을 확인한다", async (t) => {
+  let requestPath;
+  let requestMethod;
+  let authorization;
+  const mock = await listen(async (request, response) => {
+    requestPath = request.url;
+    requestMethod = request.method;
+    authorization = request.headers.authorization;
+    response.writeHead(200, { "content-type": "application/json" });
+    response.end(JSON.stringify({ data: [{ id: "mock-model" }] }));
+  });
+  t.after(mock.close);
+
+  const client = createOpenAIClient({
+    baseUrl: `${mock.url}/v1`,
+    apiKey: "test-key",
+    model: "mock-model",
+    timeoutMs: 2_000,
+  });
+  assert.equal(await client.checkAvailability(), true);
+  assert.equal(requestPath, "/v1/models");
+  assert.equal(requestMethod, "GET");
+  assert.equal(authorization, "Bearer test-key");
+
+  const missingModelClient = createOpenAIClient({
+    baseUrl: `${mock.url}/v1`,
+    apiKey: "test-key",
+    model: "missing-model",
+    timeoutMs: 2_000,
+  });
+  await assert.rejects(
+    missingModelClient.checkAvailability(),
+    (error) =>
+      error instanceof UpstreamError && error.code === "model_unavailable",
+  );
 });
 
 test("OpenAI-compatible client가 530을 server_error로 분류하고 본문을 숨긴다", async (t) => {

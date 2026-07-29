@@ -181,6 +181,7 @@ export function ChatWidget() {
     isOpen,
     isClosing,
     isLoading,
+    availability,
     error,
     messages,
     audience,
@@ -193,6 +194,7 @@ export function ChatWidget() {
     completeCloseAnimation,
     selectAudience,
     selectTone,
+    refreshAvailability,
     sendMessage,
     stopGenerating,
     retry,
@@ -214,6 +216,7 @@ export function ChatWidget() {
   const secondPinFrameRef = useRef(0);
   const pinSettleTimerRef = useRef(0);
   const showOnboarding =
+    availability === "online" &&
     messages.length === 1 &&
     messages[0]?.kind === "greeting" &&
     !isLoading;
@@ -339,13 +342,13 @@ export function ChatWidget() {
   }, [isClosing]);
 
   useEffect(() => {
-    if (isOpen && !isClosing) {
+    if (isOpen && !isClosing && availability === "online") {
       window.requestAnimationFrame(() => inputRef.current?.focus());
     } else if (!isOpen && wasOpenRef.current) {
       window.requestAnimationFrame(() => triggerRef.current?.focus());
     }
     wasOpenRef.current = isOpen;
-  }, [isClosing, isOpen]);
+  }, [availability, isClosing, isOpen]);
 
   // 연출 옵션은 PC 패널에만 적용하고, 모바일은 기존 미디어쿼리 동작을 그대로 둔다.
   const isJelly = !isMobile && effectiveChatAnimation === "jelly";
@@ -393,7 +396,7 @@ export function ChatWidget() {
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const message = draft.trim();
-    if (!message || isLoading) return;
+    if (!message || isLoading || availability !== "online") return;
     setDraft("");
     await sendMessage(message);
   };
@@ -479,27 +482,29 @@ export function ChatWidget() {
                   <h2 id="portfolio-chat-title">포트폴리오 챗봇</h2>
                 </div>
                 <div className={styles.headerControls}>
-                  <label>
-                    <span className={styles.visuallyHidden}>말투 선택</span>
-                    <select
-                      value={tone}
-                      onChange={(event) =>
-                        selectTone(
-                          event.currentTarget.value as
-                            | "official"
-                            | "manager"
-                            | "mascot",
-                        )
-                      }
-                      aria-label="챗봇 말투"
-                    >
-                      {TONE_OPTIONS.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
+                  {availability === "online" && (
+                    <label>
+                      <span className={styles.visuallyHidden}>말투 선택</span>
+                      <select
+                        value={tone}
+                        onChange={(event) =>
+                          selectTone(
+                            event.currentTarget.value as
+                              | "official"
+                              | "manager"
+                              | "mascot",
+                          )
+                        }
+                        aria-label="챗봇 말투"
+                      >
+                        {TONE_OPTIONS.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  )}
                   <button
                     className={styles.close}
                     type="button"
@@ -515,12 +520,53 @@ export function ChatWidget() {
                 ref={messageListRef}
                 className={styles.body}
                 aria-live="polite"
-                aria-busy={isLoading}
+                aria-busy={isLoading || availability === "checking"}
                 onScroll={handleMessageScroll}
                 onTouchStart={handleUserScrollIntent}
                 onWheel={handleUserScrollIntent}
               >
-                <div className={styles.messages}>
+                {availability === "idle" || availability === "checking" ? (
+                  <section className={styles.availabilityState} role="status">
+                    <span
+                      className={styles.availabilitySpinner}
+                      aria-hidden="true"
+                    />
+                    <span className={styles.availabilityEyebrow}>
+                      연결 상태 확인
+                    </span>
+                    <h3>챗봇을 준비하고 있어요</h3>
+                    <p>
+                      AI 추론 서버에 연결할 수 있는지 확인한 뒤 채팅을
+                      시작합니다.
+                    </p>
+                  </section>
+                ) : availability === "offline" ? (
+                  <section
+                    className={styles.availabilityState}
+                    role="status"
+                  >
+                    <span
+                      className={styles.availabilityOfflineIcon}
+                      aria-hidden="true"
+                    >
+                      !
+                    </span>
+                    <span className={styles.availabilityBadge}>오프라인</span>
+                    <h3>현재 챗봇을 이용할 수 없습니다</h3>
+                    <p>
+                      AI 추론 서버가 중지되어 있습니다. 포트폴리오의 다른
+                      내용은 정상적으로 둘러볼 수 있어요.
+                    </p>
+                    <button
+                      type="button"
+                      className={styles.availabilityRetry}
+                      onClick={() => void refreshAvailability()}
+                    >
+                      다시 확인
+                    </button>
+                  </section>
+                ) : (
+                  <div className={styles.messages}>
                   {messages.map((message) => (
                     <Fragment key={message.id}>
                       <article
@@ -693,49 +739,57 @@ export function ChatWidget() {
                       </button>
                     </div>
                   )}
-                </div>
+                  </div>
+                )}
               </div>
 
-              <form className={styles.composer} onSubmit={submit}>
-                <label className={styles.visuallyHidden} htmlFor="chat-message">
-                  포트폴리오 질문
-                </label>
-                <textarea
-                  id="chat-message"
-                  ref={inputRef}
-                  rows={2}
-                  maxLength={2_000}
-                  value={draft}
-                  onChange={(event) => setDraft(event.currentTarget.value)}
-                  onFocus={handleInputFocus}
-                  onBlur={handleInputBlur}
-                  onKeyDown={handleInputKeyDown}
-                  placeholder="경력, 기술, 프로젝트를 질문해 보세요"
-                  disabled={isLoading}
-                />
-                {isLoading ? (
-                  <button
-                    type="button"
-                    className={styles.stopButton}
-                    onClick={stopGenerating}
-                    aria-label="챗봇 응답 생성 중단"
-                  >
-                    중단
-                  </button>
-                ) : (
-                  <button
-                    type="submit"
-                    disabled={draft.trim().length === 0}
-                  >
-                    전송
-                  </button>
-                )}
-              </form>
-              <p className={styles.disclaimer}>
-                챗봇은 실수할 수 있습니다.
-                <br />
-                중요한 내용은 포트폴리오·공개 연락처로 확인해 주세요.
-              </p>
+              {availability === "online" && (
+                <>
+                  <form className={styles.composer} onSubmit={submit}>
+                    <label
+                      className={styles.visuallyHidden}
+                      htmlFor="chat-message"
+                    >
+                      포트폴리오 질문
+                    </label>
+                    <textarea
+                      id="chat-message"
+                      ref={inputRef}
+                      rows={2}
+                      maxLength={2_000}
+                      value={draft}
+                      onChange={(event) => setDraft(event.currentTarget.value)}
+                      onFocus={handleInputFocus}
+                      onBlur={handleInputBlur}
+                      onKeyDown={handleInputKeyDown}
+                      placeholder="경력, 기술, 프로젝트를 질문해 보세요"
+                      disabled={isLoading}
+                    />
+                    {isLoading ? (
+                      <button
+                        type="button"
+                        className={styles.stopButton}
+                        onClick={stopGenerating}
+                        aria-label="챗봇 응답 생성 중단"
+                      >
+                        중단
+                      </button>
+                    ) : (
+                      <button
+                        type="submit"
+                        disabled={draft.trim().length === 0}
+                      >
+                        전송
+                      </button>
+                    )}
+                  </form>
+                  <p className={styles.disclaimer}>
+                    챗봇은 실수할 수 있습니다.
+                    <br />
+                    중요한 내용은 포트폴리오·공개 연락처로 확인해 주세요.
+                  </p>
+                </>
+              )}
             </div>
           </section>
         </>

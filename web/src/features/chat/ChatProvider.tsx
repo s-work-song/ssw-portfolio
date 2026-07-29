@@ -10,7 +10,12 @@ import {
 } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useTheme } from "../../context/ThemeContext";
-import { requestChat, requestChatStream, ChatApiError } from "./api";
+import {
+  requestChat,
+  requestChatStatus,
+  requestChatStream,
+  ChatApiError,
+} from "./api";
 import {
   ACTION_ROUTES,
   CHAT_ANIMATIONS,
@@ -32,6 +37,7 @@ import type {
   ActionId,
   AudienceChoice,
   ChatAnimation,
+  ChatAvailability,
   ChatHistoryItem,
   ChatMessage,
   ChatRequest,
@@ -45,6 +51,7 @@ const MOBILE_QUERY = "(max-width: 720px)";
 const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
 const MOBILE_HISTORY_MARKER = "__portfolioChatOpen";
 const MOBILE_EXIT_DURATION_MS = 260;
+const CHAT_STATUS_TIMEOUT_MS = 5_000;
 
 /**
  * PC 패널이 퇴장 연출을 끝낼 때까지 DOM을 유지할 시간이다.
@@ -125,6 +132,8 @@ export function ChatProvider({ children }: Readonly<{ children: ReactNode }>) {
   const [isOpen, setIsOpen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [availability, setAvailability] =
+    useState<ChatAvailability>("idle");
   const [error, setError] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
   const [audience, setAudience] = useState<AudienceChoice | null>(null);
@@ -138,6 +147,7 @@ export function ChatProvider({ children }: Readonly<{ children: ReactNode }>) {
   const [systemReducedMotion, setSystemReducedMotion] = useState(false);
   const idRef = useRef(0);
   const abortRef = useRef<AbortController | null>(null);
+  const statusAbortRef = useRef<AbortController | null>(null);
   const inFlightRef = useRef(false);
   const stopRequestedRef = useRef(false);
   const retryRef = useRef<PendingRetry | null>(null);
@@ -251,6 +261,7 @@ export function ChatProvider({ children }: Readonly<{ children: ReactNode }>) {
   useEffect(
     () => () => {
       abortRef.current?.abort();
+      statusAbortRef.current?.abort();
       if (closeTimerRef.current !== null) {
         window.clearTimeout(closeTimerRef.current);
       }
@@ -325,6 +336,33 @@ export function ChatProvider({ children }: Readonly<{ children: ReactNode }>) {
     scrollToPendingActionAnchor();
   }, [pathname, scrollToPendingActionAnchor]);
 
+  const refreshAvailability = useCallback(async () => {
+    statusAbortRef.current?.abort();
+    const controller = new AbortController();
+    statusAbortRef.current = controller;
+    setAvailability("checking");
+    const timeout = window.setTimeout(
+      () => controller.abort(),
+      CHAT_STATUS_TIMEOUT_MS,
+    );
+
+    try {
+      const response = await requestChatStatus(controller.signal);
+      if (statusAbortRef.current === controller) {
+        setAvailability(response.status);
+      }
+    } catch {
+      if (statusAbortRef.current === controller) {
+        setAvailability("offline");
+      }
+    } finally {
+      window.clearTimeout(timeout);
+      if (statusAbortRef.current === controller) {
+        statusAbortRef.current = null;
+      }
+    }
+  }, []);
+
   const open = useCallback(() => {
     if (
       isOpenRef.current ||
@@ -349,7 +387,8 @@ export function ChatProvider({ children }: Readonly<{ children: ReactNode }>) {
     }
     isOpenRef.current = true;
     setIsOpen(true);
-  }, []);
+    void refreshAvailability();
+  }, [refreshAvailability]);
 
   const completeCloseAnimation = useCallback(() => {
     if (!isClosingRef.current) return;
@@ -533,6 +572,9 @@ export function ChatProvider({ children }: Readonly<{ children: ReactNode }>) {
             })
           : await requestChat(request, controller.signal);
         flushDelta();
+        if (response.status === "upstream_offline") {
+          setAvailability("offline");
+        }
         const completedMessage: ChatMessage = {
           id: streamingMessageId ?? nextId("assistant"),
           role: "assistant",
@@ -589,6 +631,7 @@ export function ChatProvider({ children }: Readonly<{ children: ReactNode }>) {
           );
         }
         retryRef.current = pending;
+        void refreshAvailability();
         setError(
           requestError instanceof ChatApiError
             ? requestError.message
@@ -602,13 +645,26 @@ export function ChatProvider({ children }: Readonly<{ children: ReactNode }>) {
         setIsLoading(false);
       }
     },
-    [audience, nextId, pageContext, streamingEnabled, tone],
+    [
+      audience,
+      nextId,
+      pageContext,
+      refreshAvailability,
+      streamingEnabled,
+      tone,
+    ],
   );
 
   const sendMessage = useCallback(
     async (content: string, audienceOverride?: AudienceChoice) => {
       const message = content.trim();
-      if (!message || inFlightRef.current) return;
+      if (
+        !message ||
+        availability !== "online" ||
+        inFlightRef.current
+      ) {
+        return;
+      }
 
       const history = historyFromMessages(messages);
       setMessages((current) => [
@@ -624,11 +680,17 @@ export function ChatProvider({ children }: Readonly<{ children: ReactNode }>) {
       retryRef.current = pending;
       await performRequest(pending);
     },
-    [messages, nextId, performRequest],
+    [availability, messages, nextId, performRequest],
   );
 
   const retry = useCallback(async () => {
-    if (!retryRef.current || inFlightRef.current) return;
+    if (
+      availability !== "online" ||
+      !retryRef.current ||
+      inFlightRef.current
+    ) {
+      return;
+    }
     const pending = retryRef.current;
     if (pending.assistantMessageId) {
       setMessages((current) =>
@@ -637,7 +699,7 @@ export function ChatProvider({ children }: Readonly<{ children: ReactNode }>) {
       pending.assistantMessageId = undefined;
     }
     await performRequest(pending);
-  }, [performRequest]);
+  }, [availability, performRequest]);
 
   const stopGenerating = useCallback(() => {
     if (!inFlightRef.current || !abortRef.current) return;
@@ -709,6 +771,7 @@ export function ChatProvider({ children }: Readonly<{ children: ReactNode }>) {
       isOpen,
       isClosing,
       isLoading,
+      availability,
       error,
       messages,
       audience,
@@ -727,6 +790,7 @@ export function ChatProvider({ children }: Readonly<{ children: ReactNode }>) {
       setStreamingEnabled,
       setChatAnimation,
       setStreamAnimation,
+      refreshAvailability,
       sendMessage,
       stopGenerating,
       retry,
@@ -734,6 +798,7 @@ export function ChatProvider({ children }: Readonly<{ children: ReactNode }>) {
     }),
     [
       audience,
+      availability,
       chatAnimation,
       effectiveChatAnimation,
       effectiveStreamAnimation,
@@ -747,6 +812,7 @@ export function ChatProvider({ children }: Readonly<{ children: ReactNode }>) {
       close,
       completeCloseAnimation,
       retry,
+      refreshAvailability,
       setChatAnimation,
       setStreamAnimation,
       setStreamingEnabled,

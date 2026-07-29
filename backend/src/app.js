@@ -530,6 +530,11 @@ export async function createApp({
   const retrieveCache = new TtlCache(config.cacheTtlMs);
   const chatCache = new TtlCache(config.cacheTtlMs);
   const fallbackCache = new TtlCache(config.fallbackCacheTtlMs ?? 5_000);
+  const upstreamStatusCache = new TtlCache(
+    config.upstreamStatusCacheTtlMs ?? 5_000,
+    1,
+  );
+  let upstreamStatusInFlight = null;
   // 프로세스 재시작 때 폐기되는 salt로 원 IP/질문 원문을 메모리 키에 보관하지 않는다.
   const memoryKeySalt = randomBytes(32);
   const corsHeaders = {
@@ -538,6 +543,35 @@ export async function createApp({
     "access-control-allow-headers": "Content-Type",
     vary: "Origin",
   };
+
+  async function getUpstreamStatus() {
+    const cached = upstreamStatusCache.get("upstream");
+    if (cached) return cached;
+    if (upstreamStatusInFlight) return upstreamStatusInFlight;
+
+    upstreamStatusInFlight = (async () => {
+      let status = "offline";
+      try {
+        if (typeof upstreamClient.checkAvailability === "function") {
+          await upstreamClient.checkAvailability({
+            timeoutMs: config.upstreamStatusTimeoutMs ?? 3_000,
+          });
+          status = "online";
+        }
+      } catch {
+        // 공개 상태 API는 업스트림 오류 상세나 인증 정보를 노출하지 않는다.
+      }
+      const result = { status, checkedAt: new Date().toISOString() };
+      upstreamStatusCache.set("upstream", result);
+      return result;
+    })();
+
+    try {
+      return await upstreamStatusInFlight;
+    } finally {
+      upstreamStatusInFlight = null;
+    }
+  }
 
   return async function handler(request, response) {
     Object.entries(corsHeaders).forEach(([key, value]) => response.setHeader(key, value));
@@ -559,6 +593,12 @@ export async function createApp({
           retrieverMode: config.retrieverMode ?? "lexical",
           vectorStore: config.vectorStoreKind ?? "memory",
           sourceExposure: config.sourceExposure ?? "none",
+        });
+        return;
+      }
+      if (request.method === "GET" && url.pathname === "/api/chat/status") {
+        json(response, 200, await getUpstreamStatus(), {
+          "cache-control": "no-store",
         });
         return;
       }

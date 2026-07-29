@@ -6,6 +6,7 @@ import type {
   ChatRequest,
   ChatResponse,
   ChatSegment,
+  ChatStatusResponse,
   PageContext,
 } from "./types";
 
@@ -171,6 +172,46 @@ export class ChatApiError extends Error {
     super(message);
     this.name = "ChatApiError";
   }
+}
+
+export async function requestChatStatus(
+  signal: AbortSignal,
+): Promise<ChatStatusResponse> {
+  const endpoint = apiUrl("/api/chat/status");
+  let response: Response;
+  try {
+    response = await fetch(endpoint, {
+      method: "GET",
+      cache: "no-store",
+      signal,
+    });
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw error;
+    }
+    throw new ChatApiError("챗봇 상태를 확인하지 못했습니다.");
+  }
+
+  let payload: unknown;
+  try {
+    payload = await response.json();
+  } catch {
+    throw new ChatApiError("챗봇 상태 응답을 읽지 못했습니다.");
+  }
+
+  if (
+    !response.ok ||
+    !isRecord(payload) ||
+    (payload.status !== "online" && payload.status !== "offline") ||
+    !isString(payload.checkedAt)
+  ) {
+    throw new ChatApiError("챗봇 상태를 확인하지 못했습니다.");
+  }
+
+  return {
+    status: payload.status,
+    checkedAt: payload.checkedAt,
+  };
 }
 
 export async function requestChat(

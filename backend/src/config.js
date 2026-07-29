@@ -127,6 +127,14 @@ export async function loadConfig({
       min: 1_000,
       max: 120_000,
     }),
+    upstreamStatusTimeoutMs: integer(value("UPSTREAM_STATUS_TIMEOUT_MS"), 3_000, {
+      min: 500,
+      max: 10_000,
+    }),
+    upstreamStatusCacheTtlMs: integer(value("UPSTREAM_STATUS_CACHE_TTL_MS"), 5_000, {
+      min: 0,
+      max: 60_000,
+    }),
     rateWindowMs: integer(value("RATE_WINDOW_MS"), 60_000, { min: 1_000, max: 3_600_000 }),
     rateLimitPerIp: integer(value("RATE_LIMIT_PER_IP"), 10, { min: 1, max: 10_000 }),
     rateLimitGlobal: integer(value("RATE_LIMIT_GLOBAL"), 30, { min: 1, max: 100_000 }),

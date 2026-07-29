@@ -43,6 +43,8 @@ test("OPENAI_API_KEY는 프로세스 환경이 아니라 지정된 .env에서만
   assert.equal(missing.retrieverMode, "lexical");
   assert.equal(missing.vectorStoreKind, "memory");
   assert.equal(missing.sourceExposure, "none");
+  assert.equal(missing.upstreamStatusTimeoutMs, 3_000);
+  assert.equal(missing.upstreamStatusCacheTtlMs, 5_000);
 });
 
 test("명시적 opt-in에서만 OpenAI 설정의 프로세스 환경 주입을 허용한다", async (t) => {

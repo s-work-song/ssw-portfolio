@@ -14,6 +14,13 @@ function completionUrl(baseUrl) {
     : `${normalized}/v1/chat/completions`;
 }
 
+function modelsUrl(baseUrl) {
+  const normalized = baseUrl.replace(/\/+$/u, "");
+  return normalized.endsWith("/v1")
+    ? `${normalized}/models`
+    : `${normalized}/v1/models`;
+}
+
 function classifyStatus(status) {
   return status === 408
     ? "timeout"
@@ -143,6 +150,54 @@ async function* decodeOpenAiSse(body, signal) {
 
 export function createOpenAIClient({ baseUrl, apiKey, model, timeoutMs = 30_000, fetchImpl = fetch }) {
   return {
+    async checkAvailability({ signal, timeoutMs: statusTimeoutMs = 3_000 } = {}) {
+      if (!baseUrl || !model) throw new UpstreamError("not_configured");
+      const request = createRequestController(
+        signal,
+        Math.max(1, Math.min(statusTimeoutMs, timeoutMs)),
+      );
+      try {
+        const headers = { accept: "application/json" };
+        if (apiKey) headers.authorization = `Bearer ${apiKey}`;
+        const response = await fetchImpl(modelsUrl(baseUrl), {
+          method: "GET",
+          headers,
+          signal: request.controller.signal,
+        });
+        if (!response.ok) {
+          throw new UpstreamError(
+            classifyStatus(response.status),
+            "Upstream returned an error status",
+            { status: response.status },
+          );
+        }
+
+        let payload;
+        try {
+          payload = await response.json();
+        } catch {
+          throw new UpstreamError("invalid_response");
+        }
+        const modelIds = Array.isArray(payload?.data)
+          ? payload.data
+              .map((entry) => entry?.id)
+              .filter((id) => typeof id === "string")
+          : [];
+        if (!modelIds.includes(model)) {
+          throw new UpstreamError("model_unavailable");
+        }
+        return true;
+      } catch (error) {
+        if (error instanceof UpstreamError) throw error;
+        if (error.name === "AbortError") {
+          throw new UpstreamError(request.wasTimedOut() ? "timeout" : "cancelled");
+        }
+        throw new UpstreamError("network");
+      } finally {
+        request.dispose();
+      }
+    },
+
     async chat(messages, { signal } = {}) {
       if (!baseUrl || !model) throw new UpstreamError("not_configured");
       const request = createRequestController(signal, timeoutMs);

@@ -14,6 +14,8 @@ export type ApiAudience =
 
 export type Tone = "official" | "manager" | "mascot";
 
+export type ChatAvailability = "idle" | "checking" | "online" | "offline";
+
 /** 채팅 패널이 열리고 닫힐 때 재생할 연출이다. PC 화면에만 적용된다. */
 export type ChatAnimation = "none" | "slide" | "jelly";
 
@@ -108,4 +110,9 @@ export interface ChatRequest {
   audience: ApiAudience;
   tone: Tone;
   pageContext: PageContext;
+}
+
+export interface ChatStatusResponse {
+  status: "online" | "offline";
+  checkedAt: string;
 }

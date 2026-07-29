@@ -80,6 +80,8 @@ npm test
 | `UPSTREAM_CONCURRENCY` | `1` | 동시 모델 호출 수(상한 3) |
 | `MAX_UPSTREAM_QUEUE` | `4` | 모델 호출 대기열 상한 |
 | `UPSTREAM_TIMEOUT_MS` | `30000` | 모델 호출 제한 시간 |
+| `UPSTREAM_STATUS_TIMEOUT_MS` | `3000` | 모델 목록을 이용한 실제 추론 서버 상태 확인 제한 시간 |
+| `UPSTREAM_STATUS_CACHE_TTL_MS` | `5000` | 상태 확인 결과를 재사용하는 시간 |
 | `RATE_WINDOW_MS` | `60000` | rate limit 윈도우 |
 | `RATE_LIMIT_PER_IP` | `10` | IP별 윈도우 요청 수 |
 | `RATE_LIMIT_GLOBAL` | `30` | 전체 윈도우 요청 수 |
@@ -204,6 +206,17 @@ latency를 비교합니다. `KeyFact@5`는 각 케이스의 `expected_key_facts`
 `indexDiagnostics`, `retrieverMode`, `vectorStore`, `upstreamConfigured`가 포함됩니다.
 health는 upstream이나 embedding model을 추가 호출하지 않습니다. 문서 수와 청크 수는 현재
 knowledge 내용에 따라 달라집니다.
+
+### `GET /api/chat/status`
+
+채팅창을 열기 전에 실제 추론 서버와 설정된 모델을 사용할 수 있는지 확인합니다.
+OpenAI 호환 `/v1/models`를 짧게 호출하며, 정상적으로 모델을 찾으면 `online`, 연결 실패나
+미설정·모델 부재 시 `offline`을 반환합니다. 업스트림 오류 상세와 모델 이름은 공개하지
+않고, 반복 확인이 추론 서버에 부담을 주지 않도록 결과를 잠시 캐시합니다.
+
+```json
+{"status":"offline","checkedAt":"2026-07-29T00:00:00.000Z"}
+```
 
 ### `POST /api/retrieve`
 

@@ -5,6 +5,7 @@ import type {
   ActionId,
   AudienceChoice,
   ChatAnimation,
+  ChatAvailability,
   ChatMessage,
   ChatStreamAnimation,
   Tone,
@@ -14,6 +15,7 @@ export interface ChatContextValue {
   isOpen: boolean;
   isClosing: boolean;
   isLoading: boolean;
+  availability: ChatAvailability;
   error: string | null;
   messages: ChatMessage[];
   audience: AudienceChoice | null;
@@ -36,6 +38,7 @@ export interface ChatContextValue {
   setStreamingEnabled: (enabled: boolean) => void;
   setChatAnimation: (animation: ChatAnimation) => void;
   setStreamAnimation: (animation: ChatStreamAnimation) => void;
+  refreshAvailability: () => Promise<void>;
   sendMessage: (
     message: string,
     audienceOverride?: AudienceChoice,
