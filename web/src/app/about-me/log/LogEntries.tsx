@@ -30,7 +30,7 @@ export default function LogEntries({ posts }: LogEntriesProps) {
       aria-labelledby="log-entries-title"
     >
       <div className={styles.toolbar}>
-        <div>
+        <div className={styles.toolbarTitle}>
           <p className={styles.eyebrow}>ARCHIVE</p>
           <h2 id="log-entries-title" className={styles.heading}>전체 기록</h2>
         </div>
@@ -75,19 +75,21 @@ export default function LogEntries({ posts }: LogEntriesProps) {
                 {date && <time>{date}</time>}
               </div>
 
-              <Link href={`/about-me/log/${slug}`} className={styles.cardLink}>
-                <h3>{title}</h3>
-                {summary && <p>{summary}</p>}
-              </Link>
-
-              <div className={styles.actions}>
-                <Link href={`/about-me/log/${slug}`} className={styles.readLink}>
-                  기록 읽기
+              <div className={styles.cardContent}>
+                <Link href={`/about-me/log/${slug}`} className={styles.cardLink}>
+                  <h3>{title}</h3>
+                  {summary && <p>{summary}</p>}
                 </Link>
-                <AskAiButton
-                  align="end"
-                  question={`기록 「${title}」의 핵심 내용과 이 경험에서 얻은 관점을 자세히 설명해 주세요.`}
-                />
+
+                <div className={styles.actions}>
+                  <Link href={`/about-me/log/${slug}`} className={styles.readLink}>
+                    기록 읽기
+                  </Link>
+                  <AskAiButton
+                    align="end"
+                    question={`기록 「${title}」의 핵심 내용과 이 경험에서 얻은 관점을 자세히 설명해 주세요.`}
+                  />
+                </div>
               </div>
             </article>
           ))}

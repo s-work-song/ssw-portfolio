@@ -38,7 +38,10 @@ export default function LogPage() {
             기록 (Log)
           </h2>
           <p style={{ fontSize: 'clamp(0.98rem, 2.4vw, 1.0625rem)', color: 'var(--text-dim)', maxWidth: '850px', lineHeight: 1.6, margin: 0, wordBreak: 'keep-all' }}>
-            개인적인 생각, 회고, 그리고 기술적 성찰의 기록들입니다.
+            모든 주제는 개인적인 생각, 회고, 그리고 기술적 성찰의 기록들입니다.
+            <br />
+            AI와의 인터뷰 형식으로 내용을 정리하며, 사실관계와 표현은 직접
+            검수한 뒤 최종 확정합니다.
           </p>
         </div>
       </AboutPanel>
