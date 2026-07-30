@@ -11,10 +11,16 @@ import {
   type CSSProperties,
   type FormEvent,
   type KeyboardEvent,
+  type PointerEvent as ReactPointerEvent,
 } from "react";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
-import { useTheme } from "../../context/ThemeContext";
+import {
+  CHAT_DOCK_DEFAULT_WIDTH,
+  CHAT_DOCK_MAX_WIDTH,
+  CHAT_DOCK_MIN_WIDTH,
+  useTheme,
+} from "../../context/ThemeContext";
 import ElasticJellyPanel from "../../lib/ElasticJellyPanel";
 import {
   AUDIENCE_OPTIONS,
@@ -27,6 +33,7 @@ import type { AudienceChoice, ChatMessage } from "./types";
 import styles from "./ChatWidget.module.css";
 
 const MOBILE_QUERY = "(max-width: 720px)";
+const WIDE_DESKTOP_QUERY = "(min-width: 1100px)";
 const BOTTOM_PIN_THRESHOLD_PX = 64;
 const KEYBOARD_SETTLE_DELAY_MS = 220;
 const QUICK_MENU_EXIT_DURATION_MS = 520;
@@ -80,6 +87,15 @@ function summaryActionsForMessage(message: ChatMessage) {
   });
 }
 
+function suggestedQuestionKey(question: string): string {
+  return question
+    .normalize("NFKC")
+    .trim()
+    .replace(/\s+/g, " ")
+    .replace(/[?？!！.。]+$/u, "")
+    .toLowerCase();
+}
+
 function useMobileViewport(): boolean {
   const [isMobile, setIsMobile] = useState(false);
 
@@ -92,6 +108,20 @@ function useMobileViewport(): boolean {
   }, []);
 
   return isMobile;
+}
+
+function useWideDesktopViewport(): boolean {
+  const [isWideDesktop, setIsWideDesktop] = useState(false);
+
+  useEffect(() => {
+    const media = window.matchMedia(WIDE_DESKTOP_QUERY);
+    const update = () => setIsWideDesktop(media.matches);
+    update();
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, []);
+
+  return isWideDesktop;
 }
 
 function useVisualViewportStyle(
@@ -186,7 +216,16 @@ function useVisualViewportStyle(
 }
 
 export function ChatWidget() {
-  const { fabMode, fabAnim, motion, mode, setMode } = useTheme();
+  const {
+    fabMode,
+    fabAnim,
+    chatLayout,
+    chatDockWidth,
+    motion,
+    mode,
+    setMode,
+    setChatDockWidth,
+  } = useTheme();
   const {
     isOpen,
     isClosing,
@@ -214,6 +253,9 @@ export function ChatWidget() {
     navigateAction,
   } = useChat();
   const [draft, setDraft] = useState("");
+  const [usedSuggestedQuestionKeys, setUsedSuggestedQuestionKeys] = useState<
+    ReadonlySet<string>
+  >(() => new Set());
   const [quickMenuOpen, setQuickMenuOpen] = useState(false);
   const [quickMenuClosing, setQuickMenuClosing] = useState(false);
   const quickMenuEnabled = fabMode === "quick-menu";
@@ -221,6 +263,8 @@ export function ChatWidget() {
   const quickMenuRendered =
     quickMenuEnabled && (quickMenuOpen || quickMenuClosing) && !isOpen;
   const isMobile = useMobileViewport();
+  const isWideDesktop = useWideDesktopViewport();
+  const isDocked = chatLayout === "dock" && isWideDesktop;
   const visualViewportStyle = useVisualViewportStyle(isMobile);
   const rootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -250,6 +294,53 @@ export function ChatWidget() {
       ? latestMessage.id
       : null;
   }, [isLoading, messages]);
+  const visibleSuggestedQuestions = useMemo(() => {
+    if (!latestSuggestionMessageId) return [];
+
+    const latestMessage = messages.find(
+      (message) => message.id === latestSuggestionMessageId,
+    );
+    const uniqueKeys = new Set<string>();
+
+    return (latestMessage?.suggestedQuestions ?? []).filter((question) => {
+      const key = suggestedQuestionKey(question);
+      if (
+        !key ||
+        usedSuggestedQuestionKeys.has(key) ||
+        uniqueKeys.has(key)
+      ) {
+        return false;
+      }
+      uniqueKeys.add(key);
+      return true;
+    });
+  }, [latestSuggestionMessageId, messages, usedSuggestedQuestionKeys]);
+
+  const askSuggestedQuestion = useCallback(
+    (question: string) => {
+      const key = suggestedQuestionKey(question);
+      if (key) {
+        setUsedSuggestedQuestionKeys((current) => {
+          const next = new Set(current);
+          next.add(key);
+          return next;
+        });
+      }
+      void sendMessage(question);
+    },
+    [sendMessage],
+  );
+
+  useEffect(() => {
+    if (isDocked && isOpen) {
+      document.documentElement.dataset.chatDockOpen = "true";
+    } else {
+      delete document.documentElement.dataset.chatDockOpen;
+    }
+    return () => {
+      delete document.documentElement.dataset.chatDockOpen;
+    };
+  }, [isDocked, isOpen]);
 
   const clearQuickMenuCloseTimer = useCallback(() => {
     window.clearTimeout(quickMenuCloseTimerRef.current);
@@ -441,10 +532,13 @@ export function ChatWidget() {
   }, [availability, isClosing, isOpen]);
 
   // 연출 옵션은 PC 패널에만 적용하고, 모바일은 기존 미디어쿼리 동작을 그대로 둔다.
-  const isJelly = !isMobile && effectiveChatAnimation === "jelly";
-  const isSlide = !isMobile && effectiveChatAnimation === "slide";
+  const isJelly =
+    !isMobile && !isDocked && effectiveChatAnimation === "jelly";
+  const isSlide =
+    !isMobile && !isDocked && effectiveChatAnimation === "slide";
   // 텍스트 연출은 모바일에도 적용하되, 스트리밍이 꺼져 있으면 재생할 대상이 없다.
   const streamAnimation = streamingEnabled ? effectiveStreamAnimation : "none";
+  const revealCompletionControls = streamAnimation !== "none";
 
   useLayoutEffect(() => {
     if (!isOpen || !isJelly) return;
@@ -524,12 +618,50 @@ export function ChatWidget() {
     }
   };
 
+  const handleDockResizePointerDown = (
+    event: ReactPointerEvent<HTMLDivElement>,
+  ) => {
+    if (event.pointerType === "mouse" && event.button !== 0) return;
+    event.preventDefault();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    document.documentElement.dataset.chatDockResizing = "true";
+  };
+
+  const handleDockResizePointerMove = (
+    event: ReactPointerEvent<HTMLDivElement>,
+  ) => {
+    if (!event.currentTarget.hasPointerCapture(event.pointerId)) return;
+    setChatDockWidth(window.innerWidth - event.clientX);
+  };
+
+  const finishDockResize = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+    delete document.documentElement.dataset.chatDockResizing;
+  };
+
+  const handleDockResizeKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    const step = event.shiftKey ? 40 : 12;
+    let nextWidth: number | null = null;
+
+    if (event.key === "ArrowLeft") nextWidth = chatDockWidth + step;
+    if (event.key === "ArrowRight") nextWidth = chatDockWidth - step;
+    if (event.key === "Home") nextWidth = CHAT_DOCK_MIN_WIDTH;
+    if (event.key === "End") nextWidth = CHAT_DOCK_MAX_WIDTH;
+    if (nextWidth === null) return;
+
+    event.preventDefault();
+    setChatDockWidth(nextWidth);
+  };
+
   const backdropClassName = `${styles.backdrop} ${
     isClosing ? styles.backdropClosing : ""
   }`;
   const panelClassName = [
     styles.panel,
     isClosing ? styles.panelClosing : "",
+    isDocked ? styles.panelDocked : "",
     isSlide ? styles.panelSlide : "",
     isJelly ? styles.panelJelly : "",
   ]
@@ -604,6 +736,30 @@ export function ChatWidget() {
               }
             }}
           >
+            {isDocked && (
+              <div
+                className={styles.dockResizeHandle}
+                role="separator"
+                aria-label="채팅 고정 패널 너비 조절"
+                aria-orientation="vertical"
+                aria-valuemin={CHAT_DOCK_MIN_WIDTH}
+                aria-valuemax={CHAT_DOCK_MAX_WIDTH}
+                aria-valuenow={chatDockWidth}
+                tabIndex={0}
+                title="좌우로 드래그해 너비 조절 · 두 번 클릭해 기본값 복원"
+                onPointerDown={handleDockResizePointerDown}
+                onPointerMove={handleDockResizePointerMove}
+                onPointerUp={finishDockResize}
+                onPointerCancel={finishDockResize}
+                onLostPointerCapture={() => {
+                  delete document.documentElement.dataset.chatDockResizing;
+                }}
+                onDoubleClick={() =>
+                  setChatDockWidth(CHAT_DOCK_DEFAULT_WIDTH)
+                }
+                onKeyDown={handleDockResizeKeyDown}
+              />
+            )}
             {/* 젤리 캔버스가 패널 밖까지 그려지도록 콘텐츠 클리핑은 이 래퍼가 맡는다. */}
             <div className={contentWrapperClassName}>
               <header className={styles.header}>
@@ -646,6 +802,7 @@ export function ChatWidget() {
                     }
                     onClick={() => {
                       setDraft("");
+                      setUsedSuggestedQuestionKeys(new Set());
                       resetConversation();
                     }}
                     aria-label="새 대화 시작"
@@ -792,8 +949,23 @@ export function ChatWidget() {
                               </div>
                               {segment.actions.length > 0 && (
                                 <nav
-                                  className={`${styles.actions} ${styles.inlineActions}`}
+                                  className={[
+                                    styles.actions,
+                                    styles.inlineActions,
+                                    revealCompletionControls
+                                      ? styles.completionActions
+                                      : "",
+                                  ]
+                                    .filter(Boolean)
+                                    .join(" ")}
                                   aria-label="이 문단과 관련된 페이지"
+                                  style={
+                                    {
+                                      "--completion-delay": `${
+                                        80 + segmentIndex * 70
+                                      }ms`,
+                                    } as CSSProperties
+                                  }
                                 >
                                   {segment.actions.map((action) => (
                                     <button
@@ -814,7 +986,15 @@ export function ChatWidget() {
                       )}
                       {summaryActionsForMessage(message).length > 0 && (
                         <nav
-                          className={`${styles.actions} ${styles.summaryActions}`}
+                          className={[
+                            styles.actions,
+                            styles.summaryActions,
+                            revealCompletionControls
+                              ? styles.completionActions
+                              : "",
+                          ]
+                            .filter(Boolean)
+                            .join(" ")}
                           aria-label="관련 페이지"
                         >
                           {summaryActionsForMessage(message).map((action) => (
@@ -829,21 +1009,27 @@ export function ChatWidget() {
                         </nav>
                       )}
                       {message.id === latestSuggestionMessageId &&
-                        message.suggestedQuestions &&
-                        message.suggestedQuestions.length > 0 && (
+                        visibleSuggestedQuestions.length > 0 && (
                           <nav
-                            className={styles.suggestedQuestions}
+                            className={[
+                              styles.suggestedQuestions,
+                              revealCompletionControls
+                                ? styles.completionSuggestions
+                                : "",
+                            ]
+                              .filter(Boolean)
+                              .join(" ")}
                             aria-label="이어서 물어볼 질문"
                           >
                             <span className={styles.suggestedQuestionsLabel}>
                               이어서 물어보기
                             </span>
-                            {message.suggestedQuestions.map((question) => (
+                            {visibleSuggestedQuestions.map((question) => (
                               <button
                                 key={question}
                                 type="button"
                                 className={styles.suggestedQuestionButton}
-                                onClick={() => void sendMessage(question)}
+                                onClick={() => askSuggestedQuestion(question)}
                               >
                                 {question}
                               </button>

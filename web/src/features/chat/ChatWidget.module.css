@@ -137,6 +137,65 @@
   box-shadow: 0 28px 80px -28px rgba(7, 10, 30, 0.6);
 }
 
+.dockResizeHandle {
+  display: none;
+}
+
+@media (min-width: 1100px) {
+  .panelDocked {
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: var(--chat-dock-width, 440px);
+    height: 100dvh;
+    border-width: 0 0 0 1px;
+    border-radius: 0;
+    animation: desktopDockIn 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    box-shadow: -22px 0 52px -34px rgba(7, 10, 30, 0.48);
+    will-change: transform;
+  }
+
+  .panelDocked .dockResizeHandle {
+    position: absolute;
+    z-index: 5;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    display: grid;
+    width: 14px;
+    padding: 0;
+    place-items: center;
+    border: 0;
+    outline: none;
+    background: transparent;
+    cursor: ew-resize;
+    touch-action: none;
+  }
+
+  .panelDocked .dockResizeHandle::before {
+    width: 4px;
+    height: 58px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--chat-dim) 36%, transparent);
+    content: "";
+    opacity: 0.56;
+    transition: height 160ms ease, background 160ms ease, opacity 160ms ease;
+  }
+
+  .panelDocked .dockResizeHandle:hover::before,
+  .panelDocked .dockResizeHandle:focus-visible::before,
+  .panelDocked .dockResizeHandle:active::before {
+    height: 82px;
+    background: var(--chat-accent);
+    opacity: 1;
+  }
+
+  .panelDocked.panelClosing {
+    animation: desktopDockOut 200ms cubic-bezier(0.4, 0, 1, 1) both;
+    pointer-events: none;
+  }
+}
+
 .backdrop {
   display: none;
 }
@@ -739,6 +798,7 @@
 }
 
 .summaryActions {
+  --completion-delay: 220ms;
   padding-top: 10px;
   border-top: 1px solid var(--chat-border);
 }
@@ -773,6 +833,65 @@
 .suggestedQuestionButton:hover {
   border-color: var(--chat-accent);
   color: var(--chat-accent);
+}
+
+/*
+ * 스트리밍 답변이 끝난 뒤 선택 가능한 후속 UI를 답변 흐름에 맞춰 공개한다.
+ * 요소는 처음부터 레이아웃 공간을 차지하므로 스크롤 높이가 연속해서 튀지 않고,
+ * 링크 → 라벨 → 추천 질문 순서로 시선만 부드럽게 이동한다.
+ */
+.completionActions button,
+.completionSuggestions > * {
+  opacity: 0;
+  animation: chatCompletionFadeUp 320ms cubic-bezier(0.22, 1, 0.36, 1)
+    both;
+}
+
+.completionActions button {
+  animation-delay: var(--completion-delay, 80ms);
+}
+
+.completionActions button:nth-child(2) {
+  animation-delay: calc(var(--completion-delay, 80ms) + 55ms);
+}
+
+.completionActions button:nth-child(3) {
+  animation-delay: calc(var(--completion-delay, 80ms) + 110ms);
+}
+
+.completionActions button:nth-child(4) {
+  animation-delay: calc(var(--completion-delay, 80ms) + 165ms);
+}
+
+.completionSuggestions .suggestedQuestionsLabel {
+  animation-delay: 310ms;
+}
+
+.completionSuggestions .suggestedQuestionButton:nth-of-type(1) {
+  animation-delay: 370ms;
+}
+
+.completionSuggestions .suggestedQuestionButton:nth-of-type(2) {
+  animation-delay: 430ms;
+}
+
+.completionSuggestions .suggestedQuestionButton:nth-of-type(3) {
+  animation-delay: 490ms;
+}
+
+.completionSuggestions .suggestedQuestionButton:nth-of-type(4) {
+  animation-delay: 550ms;
+}
+
+@keyframes chatCompletionFadeUp {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 7px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
 }
 
 .actions button:focus-visible,
@@ -1032,6 +1151,24 @@
   to {
     opacity: 0;
     transform: translate3d(0, 18px, 0);
+  }
+}
+
+@keyframes desktopDockIn {
+  from {
+    transform: translate3d(100%, 0, 0);
+  }
+  to {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes desktopDockOut {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(100%, 0, 0);
   }
 }
 

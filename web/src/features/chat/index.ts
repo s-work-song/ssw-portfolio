@@ -1,4 +1,5 @@
 export { ChatProvider } from "./ChatProvider";
+export { AskAiButton } from "./AskAiButton";
 export { StreamingText } from "./StreamingText";
 export { useChat } from "./ChatContext";
 export {

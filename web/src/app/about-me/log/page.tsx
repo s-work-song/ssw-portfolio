@@ -7,6 +7,7 @@ import React from 'react';
 import Link from 'next/link';
 import AboutDecorativeGrid from '@/components/about/AboutDecorativeGrid';
 import AboutPanel from '@/components/about/AboutPanel';
+import { AskAiButton } from '@/features/chat';
 import { getSortedPostsData } from '@/lib/posts';
 
 export const metadata = {
@@ -51,18 +52,22 @@ export default function LogPage() {
           <p style={{ color: 'var(--text-mute)' }}>아직 등록된 글이 없습니다.</p>
         ) : (
           allPostsData.map(({ slug, title, date, summary }) => (
-            <Link href={`/about-me/log/${slug}`} key={slug} style={{ textDecoration: 'none', display: 'block' }}>
-              <article style={{ 
-                padding: '24px', 
-                background: 'var(--bg-elev)', 
-                borderRadius: '16px', 
+            <article
+              key={slug}
+              style={{
+                padding: '24px',
+                background: 'var(--bg-elev)',
+                borderRadius: '16px',
                 border: '1px solid var(--border)',
-                cursor: 'pointer'
               }}
+            >
+              <div style={{ marginBottom: '8px' }}>
+                <time style={{ color: 'var(--text-mute)', fontSize: '0.875rem' }}>{date}</time>
+              </div>
+              <Link
+                href={`/about-me/log/${slug}`}
+                style={{ color: 'inherit', textDecoration: 'none' }}
               >
-                <div style={{ marginBottom: '8px' }}>
-                  <time style={{ color: 'var(--text-mute)', fontSize: '0.875rem' }}>{date}</time>
-                </div>
                 <h3 style={{ fontSize: '1.25rem', fontWeight: 600, margin: '0 0 12px 0', color: 'var(--text)' }}>
                   {title}
                 </h3>
@@ -71,8 +76,37 @@ export default function LogPage() {
                     {summary}
                   </p>
                 )}
-              </article>
-            </Link>
+              </Link>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'flex-end',
+                flexWrap: 'wrap',
+                gap: '9px',
+                marginTop: '18px',
+              }}>
+                <Link
+                  href={`/about-me/log/${slug}`}
+                  style={{
+                    minHeight: '34px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    padding: '7px 11px',
+                    border: '1px solid var(--border)',
+                    borderRadius: '9px',
+                    color: 'var(--text-dim)',
+                    fontSize: '12.5px',
+                    fontWeight: 700,
+                    textDecoration: 'none',
+                  }}
+                >
+                  기록 읽기
+                </Link>
+                <AskAiButton
+                  question={`기록 「${title}」의 핵심 내용과 이 경험에서 얻은 관점을 자세히 설명해 주세요.`}
+                />
+              </div>
+            </article>
           ))
         )}
       </section>

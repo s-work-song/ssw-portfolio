@@ -15,6 +15,18 @@ export type FabMode = "chat" | "quick-menu";
 export type FabAnim = "none" | "rise" | "slide" | "pop" | "blur";
 export type MotionPreference = "system" | "on" | "off";
 export type PageTransition = "none" | "slide" | "fade" | "lift";
+export type ChatLayout = "floating" | "dock";
+
+export const CHAT_DOCK_MIN_WIDTH = 340;
+export const CHAT_DOCK_MAX_WIDTH = 640;
+export const CHAT_DOCK_DEFAULT_WIDTH = 440;
+
+function normalizeChatDockWidth(width: number): number {
+  if (!Number.isFinite(width)) return CHAT_DOCK_DEFAULT_WIDTH;
+  return Math.round(
+    Math.min(CHAT_DOCK_MAX_WIDTH, Math.max(CHAT_DOCK_MIN_WIDTH, width)),
+  );
+}
 
 export interface ThemeContextType {
   mode: Mode;
@@ -23,6 +35,8 @@ export interface ThemeContextType {
   pageTransition: PageTransition;
   fabMode: FabMode;
   fabAnim: FabAnim;
+  chatLayout: ChatLayout;
+  chatDockWidth: number;
   glow: boolean;
   setMode: (m: Mode) => void;
   setAccent: (a: Accent) => void;
@@ -30,6 +44,8 @@ export interface ThemeContextType {
   setPageTransition: (transition: PageTransition) => void;
   setFabMode: (mode: FabMode) => void;
   setFabAnim: (animation: FabAnim) => void;
+  setChatLayout: (layout: ChatLayout) => void;
+  setChatDockWidth: (width: number) => void;
   setGlow: (g: boolean) => void;
   resetTheme: () => void;
 }
@@ -55,6 +71,11 @@ function CustomThemeProvider({ children }: { children: React.ReactNode }) {
     useState<PageTransition>("fade");
   const [fabMode, setFabModeState] = useState<FabMode>("chat");
   const [fabAnim, setFabAnimState] = useState<FabAnim>("slide");
+  const [chatLayout, setChatLayoutState] =
+    useState<ChatLayout>("floating");
+  const [chatDockWidth, setChatDockWidthState] = useState(
+    CHAT_DOCK_DEFAULT_WIDTH,
+  );
   const [glow, setGlowState] = useState<boolean>(true);
   const [mounted, setMounted] = useState(false);
 
@@ -80,20 +101,30 @@ function CustomThemeProvider({ children }: { children: React.ReactNode }) {
           (parsed.v === 2 ||
             parsed.v === 3 ||
             parsed.v === 4 ||
-            parsed.v === 5) &&
+            parsed.v === 5 ||
+            parsed.v === 6 ||
+            parsed.v === 7) &&
           (parsed.motion === "system" || parsed.motion === "on" || parsed.motion === "off")
         ) {
           setMotionState(parsed.motion);
         }
         if (
-          (parsed.v === 3 || parsed.v === 4 || parsed.v === 5) &&
+          (parsed.v === 3 ||
+            parsed.v === 4 ||
+            parsed.v === 5 ||
+            parsed.v === 6 ||
+            parsed.v === 7) &&
           (parsed.fabMode === "chat" || parsed.fabMode === "quick-menu")
         ) {
           setFabModeState(parsed.fabMode);
         }
         // v2에서 미리보기 전용이었던 선택값도 실제 빠른 메뉴 연출로 승격해 복원한다.
         if (
-          (parsed.v === 2 || parsed.v === 4 || parsed.v === 5) &&
+          (parsed.v === 2 ||
+            parsed.v === 4 ||
+            parsed.v === 5 ||
+            parsed.v === 6 ||
+            parsed.v === 7) &&
           (parsed.fabAnim === "none" ||
             parsed.fabAnim === "rise" ||
             parsed.fabAnim === "slide" ||
@@ -104,13 +135,24 @@ function CustomThemeProvider({ children }: { children: React.ReactNode }) {
           setFabAnimState(parsed.fabAnim === "fade" ? "blur" : parsed.fabAnim);
         }
         if (
-          parsed.v === 5 &&
+          (parsed.v === 5 || parsed.v === 6 || parsed.v === 7) &&
           (parsed.pageTransition === "none" ||
             parsed.pageTransition === "slide" ||
             parsed.pageTransition === "fade" ||
             parsed.pageTransition === "lift")
         ) {
           setPageTransitionState(parsed.pageTransition);
+        }
+        if (
+          (parsed.v === 6 || parsed.v === 7) &&
+          (parsed.chatLayout === "floating" || parsed.chatLayout === "dock")
+        ) {
+          setChatLayoutState(parsed.chatLayout);
+        }
+        if (parsed.v === 7 && typeof parsed.chatDockWidth === "number") {
+          setChatDockWidthState(
+            normalizeChatDockWidth(parsed.chatDockWidth),
+          );
         }
         if (typeof parsed.glow === "boolean") setGlowState(parsed.glow);
       }
@@ -137,17 +179,23 @@ function CustomThemeProvider({ children }: { children: React.ReactNode }) {
     if (!mounted) return;
     applyCustomTheme(accent);
     document.documentElement.dataset.motion = motion;
+    document.documentElement.style.setProperty(
+      "--chat-dock-width",
+      `${chatDockWidth}px`,
+    );
     
     try {
       localStorage.setItem(
         "swork-theme-custom",
         JSON.stringify({
-          v: 5,
+          v: 7,
           accent,
           motion,
           pageTransition,
           fabMode,
           fabAnim,
+          chatLayout,
+          chatDockWidth,
           glow,
         })
       );
@@ -160,6 +208,8 @@ function CustomThemeProvider({ children }: { children: React.ReactNode }) {
     pageTransition,
     fabMode,
     fabAnim,
+    chatLayout,
+    chatDockWidth,
     glow,
     mounted,
   ]);
@@ -174,6 +224,10 @@ function CustomThemeProvider({ children }: { children: React.ReactNode }) {
     setPageTransitionState(transition);
   const setFabMode = (nextMode: FabMode) => setFabModeState(nextMode);
   const setFabAnim = (animation: FabAnim) => setFabAnimState(animation);
+  const setChatLayout = (layout: ChatLayout) =>
+    setChatLayoutState(layout);
+  const setChatDockWidth = (width: number) =>
+    setChatDockWidthState(normalizeChatDockWidth(width));
   const setGlow = (g: boolean) => setGlowState(g);
   
   const resetTheme = () => {
@@ -184,6 +238,8 @@ function CustomThemeProvider({ children }: { children: React.ReactNode }) {
     setPageTransitionState("fade");
     setFabModeState("chat");
     setFabAnimState("slide");
+    setChatLayoutState("floating");
+    setChatDockWidthState(CHAT_DOCK_DEFAULT_WIDTH);
     setGlowState(true);
   };
 
@@ -196,6 +252,8 @@ function CustomThemeProvider({ children }: { children: React.ReactNode }) {
         pageTransition,
         fabMode,
         fabAnim,
+        chatLayout,
+        chatDockWidth,
         glow,
         setMode,
         setAccent,
@@ -203,6 +261,8 @@ function CustomThemeProvider({ children }: { children: React.ReactNode }) {
         setPageTransition,
         setFabMode,
         setFabAnim,
+        setChatLayout,
+        setChatDockWidth,
         setGlow,
         resetTheme,
       }}

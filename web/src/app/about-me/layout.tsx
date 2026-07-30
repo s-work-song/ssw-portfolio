@@ -34,17 +34,24 @@ export default function AboutMeLayout({
     { label: "기록 (Log)", shortLabel: "기록", href: "/about-me/log" },
   ];
 
+  const normalizePath = (path: string) =>
+    path.length > 1 ? path.replace(/\/+$/, "") : path;
+  const currentPath = normalizePath(pathname);
+
   /** 중첩 로그 경로까지 올바르게 활성화하되 Overview는 정확히 일치할 때만 선택한다. */
   const isActive = (href: string) => {
+    const normalizedHref = normalizePath(href);
     if (href === "/about-me") {
-      return pathname === "/about-me";
+      return currentPath === normalizedHref;
     }
-    return pathname?.startsWith(href) ?? false;
+    return currentPath.startsWith(normalizedHref);
   };
 
   const tabIndexForPath = (path: string) =>
     tabs.findIndex((tab, index) =>
-      index === 0 ? path === tab.href : path.startsWith(tab.href),
+      index === 0
+        ? normalizePath(path) === tab.href
+        : normalizePath(path).startsWith(tab.href),
     );
   React.useEffect(() => {
     window.clearTimeout(navigationTimerRef.current);
@@ -80,7 +87,7 @@ export default function AboutMeLayout({
         window.matchMedia('(prefers-reduced-motion: reduce)').matches);
     if (
       modifiedClick ||
-      targetPath === pathname ||
+      normalizePath(targetPath) === currentPath ||
       pageTransition === 'none' ||
       reduceMotion
     ) {
@@ -109,15 +116,22 @@ export default function AboutMeLayout({
       <header className="about-header">
         {/* Left: Title */}
         <div className="about-header-title">
-          <h1 className="about-title" style={{
-            fontWeight: 700,
-            color: 'var(--text)',
-            margin: 0,
-            lineHeight: 1.1,
-            letterSpacing: '-0.02em'
-          }}>
-            소개 페이지
-          </h1>
+          <Link
+            href="/about-me"
+            className="about-title-link"
+            onClick={(event) => navigateTab(event, "/about-me")}
+            aria-label="소개 페이지 개요로 이동"
+          >
+            <h1 className="about-title" style={{
+              fontWeight: 700,
+              color: 'var(--text)',
+              margin: 0,
+              lineHeight: 1.1,
+              letterSpacing: '-0.02em'
+            }}>
+              소개 페이지
+            </h1>
+          </Link>
         </div>
 
         {/* Right: Settings and Tabs */}

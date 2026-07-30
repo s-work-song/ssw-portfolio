@@ -46,7 +46,23 @@ body {
   color: var(--text, #eef0f6);
   font-family: 'Pretendard', system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
-  transition: background 0.3s ease, color 0.3s ease;
+  transition: background 0.3s ease, color 0.3s ease, padding-right 0.22s ease;
+}
+
+@media (min-width: 1100px) {
+  :root[data-chat-dock-open="true"] body {
+    padding-right: var(--chat-dock-width, 440px);
+  }
+
+  :root[data-chat-dock-resizing="true"],
+  :root[data-chat-dock-resizing="true"] * {
+    cursor: ew-resize !important;
+    user-select: none !important;
+  }
+
+  :root[data-chat-dock-resizing="true"] body {
+    transition: none;
+  }
 }
 
 /* 모바일 FAB 하단 클리어런스: 마지막 콘텐츠가 고정 버튼 위까지 스크롤되게 합니다. */
@@ -973,6 +989,17 @@ code {
   min-height: 98px;
   align-self: stretch;
   align-items: center;
+}
+
+.about-title-link {
+  display: inline-flex;
+  border-radius: 10px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.about-title-link:hover .about-title {
+  color: var(--accent, #6366f1) !important;
 }
 
 .about-header-right {

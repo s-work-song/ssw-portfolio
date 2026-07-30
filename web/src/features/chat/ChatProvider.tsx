@@ -424,6 +424,17 @@ export function ChatProvider({ children }: Readonly<{ children: ReactNode }>) {
     }
   }, []);
 
+  /*
+   * 콘텐츠 카드의 "AI에게 물어보기" 진입점을 온라인일 때만 노출하려면
+   * 채팅창을 열기 전에도 가벼운 상태 확인이 한 번 필요하다.
+   */
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => {
+      void refreshAvailability();
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [refreshAvailability]);
+
   const open = useCallback(() => {
     if (
       isOpenRef.current ||
@@ -448,8 +459,10 @@ export function ChatProvider({ children }: Readonly<{ children: ReactNode }>) {
     }
     isOpenRef.current = true;
     setIsOpen(true);
-    void refreshAvailability();
-  }, [refreshAvailability]);
+    if (availability !== "online") {
+      void refreshAvailability();
+    }
+  }, [availability, refreshAvailability]);
 
   const completeCloseAnimation = useCallback(() => {
     if (!isClosingRef.current) return;

@@ -11,6 +11,10 @@ import {
   useTheme,
   ACCENTS,
   Accent,
+  CHAT_DOCK_DEFAULT_WIDTH,
+  CHAT_DOCK_MAX_WIDTH,
+  CHAT_DOCK_MIN_WIDTH,
+  ChatLayout,
   FabAnim,
   FabMode,
   PageTransition,
@@ -106,6 +110,8 @@ export default function SettingsPage() {
     pageTransition,
     fabMode,
     fabAnim,
+    chatLayout,
+    chatDockWidth,
     glow,
     setMode,
     setAccent,
@@ -113,6 +119,8 @@ export default function SettingsPage() {
     setPageTransition,
     setFabMode,
     setFabAnim,
+    setChatLayout,
+    setChatDockWidth,
     setGlow,
     resetTheme,
   } = useTheme();
@@ -789,6 +797,177 @@ export default function SettingsPage() {
                   }}
                 />
               </button>
+            </div>
+          </section>
+
+          {/* Desktop chat layout */}
+          <section style={{ background: "var(--bg-elev)", border: "1px solid var(--border)", borderRadius: "18px", padding: "clamp(20px, 3vw, 28px)" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", marginBottom: "4px" }}>
+              <span id="chat-layout-title" style={{ fontSize: "16px", fontWeight: 700 }}>
+                PC 채팅 레이아웃
+              </span>
+              <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "12.5px", color: "var(--accent, #6366f1)", whiteSpace: "nowrap" }}>
+                {chatLayout === "dock" ? "오른쪽 고정 패널" : "플로팅 창"}
+              </span>
+            </div>
+            <div id="chat-layout-description" style={{ fontSize: "13.5px", color: "var(--text-mute)", marginBottom: "18px", lineHeight: 1.6 }}>
+              넓은 PC 화면에서 채팅을 콘텐츠 위에 띄울지, IDE처럼 오른쪽 영역을 전용 패널로 사용할지 정합니다.
+            </div>
+            <div
+              role="radiogroup"
+              aria-labelledby="chat-layout-title"
+              aria-describedby="chat-layout-description"
+              style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "10px" }}
+            >
+              {([
+                {
+                  value: "floating",
+                  label: "플로팅 창",
+                  description: "현재처럼 콘텐츠 위에 작은 채팅창을 띄웁니다. (기본)",
+                },
+                {
+                  value: "dock",
+                  label: "오른쪽 고정 패널",
+                  description: "채팅이 열리면 오른쪽 전체 높이를 배정하고 본문을 밀어냅니다.",
+                },
+              ] as ReadonlyArray<{
+                value: ChatLayout;
+                label: string;
+                description: string;
+              }>).map((option) => {
+                const active = chatLayout === option.value;
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    role="radio"
+                    aria-checked={active}
+                    onClick={() => setChatLayout(option.value)}
+                    style={{
+                      display: "flex",
+                      minHeight: "92px",
+                      flexDirection: "column",
+                      gap: "7px",
+                      padding: "15px 16px",
+                      borderRadius: "13px",
+                      border: active
+                        ? "1.5px solid var(--accent, #6366f1)"
+                        : "1.5px solid var(--border)",
+                      background: active
+                        ? "var(--accent-soft, rgba(99,102,241,.14))"
+                        : "var(--bg-elev-2)",
+                      color: "var(--text)",
+                      cursor: "pointer",
+                      textAlign: "left",
+                    }}
+                  >
+                    <span style={{ fontSize: "14px", fontWeight: 700 }}>
+                      {option.label}
+                    </span>
+                    <span style={{ color: "var(--text-mute)", fontSize: "12px", lineHeight: 1.5 }}>
+                      {option.description}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+            {chatLayout === "dock" && (
+              <div
+                style={{
+                  display: "grid",
+                  gap: "10px",
+                  marginTop: "14px",
+                  padding: "14px 15px",
+                  border: "1px solid var(--border)",
+                  borderRadius: "13px",
+                  background: "var(--bg-elev-2)",
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: "12px",
+                  }}
+                >
+                  <label
+                    htmlFor="chat-dock-width"
+                    style={{ fontSize: "13px", fontWeight: 700 }}
+                  >
+                    고정 패널 너비
+                  </label>
+                  <span
+                    style={{
+                      color: "var(--accent, #6366f1)",
+                      fontFamily: "'JetBrains Mono', monospace",
+                      fontSize: "12.5px",
+                    }}
+                  >
+                    {chatDockWidth}px
+                  </span>
+                </div>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr auto",
+                    alignItems: "center",
+                    gap: "12px",
+                  }}
+                >
+                  <input
+                    id="chat-dock-width"
+                    type="range"
+                    min={CHAT_DOCK_MIN_WIDTH}
+                    max={CHAT_DOCK_MAX_WIDTH}
+                    step={1}
+                    value={chatDockWidth}
+                    onChange={(event) =>
+                      setChatDockWidth(Number(event.currentTarget.value))
+                    }
+                    style={{
+                      width: "100%",
+                      accentColor: "var(--accent, #6366f1)",
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setChatDockWidth(CHAT_DOCK_DEFAULT_WIDTH)
+                    }
+                    disabled={chatDockWidth === CHAT_DOCK_DEFAULT_WIDTH}
+                    style={{
+                      minHeight: "34px",
+                      padding: "6px 11px",
+                      border: "1px solid var(--border-strong)",
+                      borderRadius: "9px",
+                      background: "var(--bg-elev)",
+                      color: "var(--text)",
+                      cursor:
+                        chatDockWidth === CHAT_DOCK_DEFAULT_WIDTH
+                          ? "default"
+                          : "pointer",
+                      opacity:
+                        chatDockWidth === CHAT_DOCK_DEFAULT_WIDTH ? 0.5 : 1,
+                    }}
+                  >
+                    기본값
+                  </button>
+                </div>
+                <span
+                  style={{
+                    color: "var(--text-mute)",
+                    fontSize: "12px",
+                    lineHeight: 1.5,
+                  }}
+                >
+                  패널을 연 뒤 왼쪽 경계를 드래그하거나 이 슬라이더로
+                  조절할 수 있습니다.
+                </span>
+              </div>
+            )}
+            <div style={{ marginTop: "11px", color: "var(--text-mute)", fontSize: "12.5px", lineHeight: 1.55 }}>
+              고정 패널은 화면 너비 1100px 이상에서 적용되며, 더 좁은 화면과 모바일에서는 자동으로 플로팅 창을 사용합니다.
             </div>
           </section>
 

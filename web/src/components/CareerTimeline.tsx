@@ -5,13 +5,13 @@
  * 투영하는 Strategy 패턴이며, 좁은 props 계약으로 데이터 모듈과 DIP를 유지한다.
  */
 import React from 'react';
+import { AskAiButton } from '@/features/chat';
 import type { CareerItem, TimelineDescription } from '@/types/career';
 
 export default function CareerTimeline({ items }: { items: CareerItem[] }) {
   const [layoutMode, setLayoutMode] = React.useState<'right' | 'alternate' | 'center_period' | 'center_item'>('center_period');
   const [isMobile, setIsMobile] = React.useState(false);
-  const [expandedMap, setExpandedMap] = React.useState<Record<string, boolean>>({});
-  const dragStartRef = React.useRef<{ x: number; y: number } | null>(null);
+  const [expandedCards, setExpandedCards] = React.useState<Record<number, boolean>>({});
 
   React.useEffect(() => {
     const handleResize = () => {
@@ -25,56 +25,74 @@ export default function CareerTimeline({ items }: { items: CareerItem[] }) {
   // 모바일에서는 가독성이 검증된 단일 축 전략을 강제하고 데스크톱에서만 선택 전략을 허용합니다.
   const activeLayout = isMobile ? 'right' : layoutMode;
 
-  const toggleExpand = (cardIdx: number, descIdx: number) => {
-    const key = `${cardIdx}_${descIdx}`;
-    setExpandedMap(prev => ({ ...prev, [key]: !prev[key] }));
+  const hasCardDetails = React.useCallback((item: CareerItem) => {
+    if (typeof item.desc === 'string') return item.desc.trim().length > 0;
+    return item.desc.some(
+      ({ summary, details }) =>
+        summary.trim().length > 0 || Boolean(details?.length),
+    );
+  }, []);
+
+  const expandableCardIndices = React.useMemo(
+    () =>
+      items.flatMap((item, index) =>
+        hasCardDetails(item) ? [index] : [],
+      ),
+    [hasCardDetails, items],
+  );
+
+  const isAllExpanded =
+    expandableCardIndices.length > 0 &&
+    expandableCardIndices.every((index) => expandedCards[index]);
+
+  const toggleCard = (cardIndex: number) => {
+    setExpandedCards((current) => ({
+      ...current,
+      [cardIndex]: !current[cardIndex],
+    }));
   };
 
-  const handleMouseDown = (e: React.MouseEvent) => {
-    dragStartRef.current = { x: e.clientX, y: e.clientY };
-  };
-
-  const handleMouseUp = (e: React.MouseEvent, cardIdx: number, descIdx: number) => {
-    if (!dragStartRef.current) return;
-    const dx = Math.abs(e.clientX - dragStartRef.current.x);
-    const dy = Math.abs(e.clientY - dragStartRef.current.y);
-    if (dx < 5 && dy < 5) toggleExpand(cardIdx, descIdx);
-    dragStartRef.current = null;
+  const setAllExpanded = (expanded: boolean) => {
+    setExpandedCards(
+      expanded
+        ? Object.fromEntries(
+            expandableCardIndices.map((index) => [index, true]),
+          )
+        : {},
+    );
   };
 
   const expandPeriod = (period: string) => {
-    const newMap = { ...expandedMap };
-    items.forEach((item, i) => {
-      if (item.period === period && Array.isArray(item.desc)) {
-        (item.desc as TimelineDescription[]).forEach((d, dIdx) => {
-          if (d.details && d.details.length > 0) newMap[`${i}_${dIdx}`] = true;
-        });
-      }
+    setExpandedCards((current) => {
+      const next = { ...current };
+      items.forEach((item, index) => {
+        if (item.period === period && hasCardDetails(item)) {
+          next[index] = true;
+        }
+      });
+      return next;
     });
-    setExpandedMap(newMap);
   };
 
   const collapsePeriod = (period: string) => {
-    const newMap = { ...expandedMap };
-    items.forEach((item, i) => {
-      if (item.period === period) {
-        const len = Array.isArray(item.desc) ? item.desc.length : 1;
-        for (let d = 0; d < len; d++) delete newMap[`${i}_${d}`];
-      }
+    setExpandedCards((current) => {
+      const next = { ...current };
+      items.forEach((item, index) => {
+        if (item.period === period) {
+          delete next[index];
+        }
+      });
+      return next;
     });
-    setExpandedMap(newMap);
   };
 
-  const isPeriodAnyExpanded = (period: string) => {
-    return items.some((item, i) => {
-      if (item.period !== period) return false;
-      const len = Array.isArray(item.desc) ? item.desc.length : 1;
-      for (let d = 0; d < len; d++) {
-        if (expandedMap[`${i}_${d}`]) return true;
-      }
-      return false;
-    });
-  };
+  const isPeriodAnyExpanded = (period: string) =>
+    items.some(
+      (item, index) =>
+        item.period === period &&
+        hasCardDetails(item) &&
+        Boolean(expandedCards[index]),
+    );
 
   const itemGroupIndices = React.useMemo(() => {
     let gIdx = -1;
@@ -89,7 +107,9 @@ export default function CareerTimeline({ items }: { items: CareerItem[] }) {
     const isAnyOpen = isPeriodAnyExpanded(period);
     return (
       <button
+        type="button"
         onClick={() => isAnyOpen ? collapsePeriod(period) : expandPeriod(period)}
+        aria-label={`${period} 카드 상세 ${isAnyOpen ? '모두 접기' : '모두 펼치기'}`}
         style={{
           padding: '5px 12px', background: 'var(--bg-elev)', border: '1px solid var(--border)',
           borderRadius: '8px', fontSize: '0.75rem', fontWeight: 700,
@@ -100,7 +120,7 @@ export default function CareerTimeline({ items }: { items: CareerItem[] }) {
         onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--text)'; e.currentTarget.style.background = 'var(--bg-elev-2)'; }}
         onMouseLeave={(e) => { e.currentTarget.style.color = isAnyOpen ? accentColor : 'var(--text-dim)'; e.currentTarget.style.background = 'var(--bg-elev)'; }}
       >
-        <span>{isAnyOpen ? '상세 접기 ▲' : '상세 펼치기 ▼'}</span>
+        <span>{isAnyOpen ? '연도 상세 접기 ▲' : '연도 상세 펼치기 ▼'}</span>
       </button>
     );
   };
@@ -117,58 +137,75 @@ export default function CareerTimeline({ items }: { items: CareerItem[] }) {
     </div>
   );
 
-  // ──────────── 공통 헬퍼: 카드 내부 설명 목록 렌더링 ────────────
-  const renderDescItems = (descItems: TimelineDescription[], cardIndex: number, accentColor: string) => (
+  // ──────────── 공통 헬퍼: 펼친 카드의 설명 목록 렌더링 ────────────
+  const renderDescItems = (descItems: TimelineDescription[]) => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-      {descItems.map((descItem, dIdx) => {
-        const hasDetails = descItem.details && descItem.details.length > 0;
-        const isItemExpanded = !!expandedMap[`${cardIndex}_${dIdx}`];
-        return (
-          <div key={dIdx} style={{ display: 'flex', flexDirection: 'column' }}>
-            <div
-              onMouseDown={handleMouseDown}
-              onMouseUp={hasDetails ? (e) => handleMouseUp(e, cardIndex, dIdx) : undefined}
-              style={{
-                display: 'flex', alignItems: 'flex-start', gap: '8px',
-                cursor: hasDetails ? 'pointer' : 'default', color: 'var(--text)',
-                fontSize: '0.95rem', lineHeight: 1.6, fontWeight: 500, userSelect: 'text'
-              }}
-            >
-              {hasDetails ? (
-                <span style={{
-                  color: accentColor, fontSize: '0.7rem',
-                  transform: isItemExpanded ? 'rotate(0deg)' : 'rotate(-90deg)',
-                  transition: 'transform 0.15s ease', display: 'inline-block',
-                  marginTop: '3.5px', userSelect: 'none'
-                }}>▼</span>
-              ) : (
-                <span style={{ color: 'var(--text-mute)', fontSize: '0.9rem', marginRight: '4px', userSelect: 'none' }}>•</span>
-              )}
-              <span style={{ color: 'var(--text-dim)' }}>{descItem.summary}</span>
-            </div>
-            {isItemExpanded && hasDetails && (
-              <ul style={{
-                margin: '6px 0 0 0', paddingLeft: '38px', display: 'flex',
-                flexDirection: 'column', gap: '6px', color: 'var(--text-mute)',
-                fontSize: '0.925rem', lineHeight: 1.6
-              }}>
-                {descItem.details!.map((bullet, idx) => (
-                  <li key={idx} style={{ listStyleType: 'disc' }}>{bullet}</li>
-                ))}
-              </ul>
-            )}
-          </div>
-        );
-      })}
+      {descItems.map((descItem, dIdx) => (
+        <div key={dIdx} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          {descItem.summary && (
+            <p style={{
+              margin: 0,
+              color: 'var(--text-dim)',
+              fontSize: '0.95rem',
+              fontWeight: 500,
+              lineHeight: 1.6,
+            }}>
+              {descItem.summary}
+            </p>
+          )}
+          {descItem.details && descItem.details.length > 0 && (
+            <ul style={{
+              margin: 0, paddingLeft: '22px', display: 'flex',
+              flexDirection: 'column', gap: '6px', color: 'var(--text-mute)',
+              fontSize: '0.925rem', lineHeight: 1.6
+            }}>
+              {descItem.details.map((bullet, idx) => (
+                <li key={idx}>{bullet}</li>
+              ))}
+            </ul>
+          )}
+        </div>
+      ))}
     </div>
   );
 
   return (
     <div style={{ position: 'relative' }}>
 
-      {/* ── 레이아웃 모드 토글 ── */}
-      {!isMobile && (
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '28px', zIndex: 15, position: 'relative' }}>
+      {/* ── 전체 상세 및 레이아웃 모드 토글 ── */}
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: '10px',
+        marginBottom: '28px',
+        zIndex: 15,
+        position: 'relative',
+      }}>
+        <button
+          type="button"
+          onClick={() => setAllExpanded(!isAllExpanded)}
+          aria-expanded={isAllExpanded}
+          style={{
+            padding: '8px 13px',
+            border: '1px solid var(--border)',
+            borderRadius: '9px',
+            background: isAllExpanded
+              ? 'var(--accent-soft, rgba(99,102,241,.14))'
+              : 'var(--bg-elev)',
+            color: isAllExpanded
+              ? 'var(--accent, #6366f1)'
+              : 'var(--text-dim)',
+            boxShadow: 'var(--shadow)',
+            cursor: 'pointer',
+            fontSize: '0.78rem',
+            fontWeight: 700,
+          }}
+        >
+          {isAllExpanded ? '전체 상세 접기 ▲' : '전체 상세 펼치기 ▼'}
+        </button>
+        {!isMobile && (
           <div role="radiogroup" aria-label="타임라인 배치" style={{
             background: 'var(--bg-elev-2, rgba(255,255,255,0.05))', padding: '3px',
             borderRadius: '10px', border: '1px solid var(--border)',
@@ -187,8 +224,8 @@ export default function CareerTimeline({ items }: { items: CareerItem[] }) {
               </button>
             ))}
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* ── 한 방향 보기: 고정 세로선 ── */}
       {activeLayout === 'right' && (
@@ -210,6 +247,9 @@ export default function CareerTimeline({ items }: { items: CareerItem[] }) {
         } else if (Array.isArray(item.desc)) {
           descItems = item.desc as TimelineDescription[];
         }
+        const hasDetails = hasCardDetails(item);
+        const isCardExpanded = Boolean(expandedCards[i]);
+        const detailId = `timeline-card-detail-${i}`;
 
         const gIdx = itemGroupIndices[i];
         const isLeft = activeLayout === 'alternate' && gIdx % 2 === 1;
@@ -481,7 +521,7 @@ export default function CareerTimeline({ items }: { items: CareerItem[] }) {
                 padding: '20px', position: 'relative', textAlign: 'left', zIndex: 2
               }}>
                 {/* 제목 행 */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginBottom: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
                   <h4 style={{ fontSize: '1.2rem', fontWeight: 700, margin: 0, color: 'var(--text)', wordBreak: 'keep-all' }}>
                     {item.role}
                   </h4>
@@ -506,8 +546,53 @@ export default function CareerTimeline({ items }: { items: CareerItem[] }) {
                   )}
                 </div>
 
-                {/* 설명 목록 */}
-                {renderDescItems(descItems, i, accentColor)}
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'flex-end',
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
+                  gap: '8px',
+                  marginTop: '14px',
+                }}>
+                  <AskAiButton
+                    question={`연구 경험의 「${item.role}」 항목을 배경, 수행 내용, 검증 결과 중심으로 자세히 설명해 주세요.`}
+                  />
+                  {hasDetails && (
+                    <button
+                      type="button"
+                      onClick={() => toggleCard(i)}
+                      aria-expanded={isCardExpanded}
+                      aria-controls={detailId}
+                      style={{
+                        minHeight: '34px',
+                        padding: '7px 11px',
+                        border: '1px solid var(--border)',
+                        borderRadius: '9px',
+                        background: 'var(--bg-elev-2)',
+                        color: 'var(--text-dim)',
+                        cursor: 'pointer',
+                        fontSize: '12.5px',
+                        fontWeight: 700,
+                      }}
+                    >
+                      {isCardExpanded ? '상세 접기 ▲' : '상세 보기 ▼'}
+                    </button>
+                  )}
+                </div>
+
+                {/* 기본은 제목만 보여주고, 설명은 명시적인 버튼으로 펼친다. */}
+                {isCardExpanded && hasDetails && (
+                  <div
+                    id={detailId}
+                    style={{
+                      marginTop: '14px',
+                      paddingTop: '14px',
+                      borderTop: '1px solid var(--border)',
+                    }}
+                  >
+                    {renderDescItems(descItems)}
+                  </div>
+                )}
               </div>
             </div>
 
