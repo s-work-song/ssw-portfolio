@@ -18,7 +18,9 @@ import postsData from '../content/posts.json';
 export type PostData = {
   slug: string;     // 마크다운 파일명에서 파싱된 유니크 식별자이자 URL 라우팅 경로
   title: string;    // 포스트 제목 (Frontmatter 파싱값)
-  date: string;     // 작성 일자 (YYYY-MM-DD 포맷)
+  date?: string;    // 공개할 때만 사용하는 작성 일자 (YYYY-MM-DD 포맷)
+  order?: number;   // 작성일을 공개하지 않아도 목록 순서를 정할 수 있는 값
+  tags?: string[];  // 목록 필터와 상세 분류에 사용하는 공개 태그
   summary?: string; // 목록 화면에 노출될 포스트의 짧은 핵심 요약문 (옵션)
   content: string;  // 마크다운 문법으로 쓰여진 포스트 본문 전체
 };
@@ -35,19 +37,24 @@ const posts: PostData[] = postsData as PostData[];
  */
 export function getSortedPostsData(): Omit<PostData, 'content'>[] {
   return posts
-    .map(({ slug, title, date, summary }) => ({
+    .map(({ slug, title, date, order, tags, summary }) => ({
       slug,
       title,
       date,
+      order,
+      tags,
       summary,
     }))
     .sort((a, b) => {
-      // 최신 날짜순(내림차순, 큰 날짜 값이 인덱스 앞쪽으로 위치)으로 정렬합니다.
-      if (a.date < b.date) {
-        return 1;
-      } else {
-        return -1;
+      // 날짜 비공개 글은 명시적인 order로 정렬하고, 기존 날짜형 글은
+      // 하위 호환을 위해 날짜 내림차순을 유지한다.
+      const orderDifference = (b.order ?? Number.NEGATIVE_INFINITY)
+        - (a.order ?? Number.NEGATIVE_INFINITY);
+      if (orderDifference !== 0) {
+        return orderDifference;
       }
+
+      return (b.date ?? '').localeCompare(a.date ?? '');
     });
 }
 

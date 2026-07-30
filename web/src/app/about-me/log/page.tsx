@@ -7,8 +7,8 @@ import React from 'react';
 import Link from 'next/link';
 import AboutDecorativeGrid from '@/components/about/AboutDecorativeGrid';
 import AboutPanel from '@/components/about/AboutPanel';
-import { AskAiButton } from '@/features/chat';
 import { getSortedPostsData } from '@/lib/posts';
+import LogEntries from './LogEntries';
 
 export const metadata = {
   title: '기록 | Log',
@@ -43,73 +43,11 @@ export default function LogPage() {
         </div>
       </AboutPanel>
 
-      <section
-        id="log-entries"
-        tabIndex={-1}
-        style={{ display: 'flex', flexDirection: 'column', gap: '24px', scrollMarginTop: '96px' }}
-      >
-        {allPostsData.length === 0 ? (
-          <p style={{ color: 'var(--text-mute)' }}>아직 등록된 글이 없습니다.</p>
-        ) : (
-          allPostsData.map(({ slug, title, date, summary }) => (
-            <article
-              key={slug}
-              style={{
-                padding: '24px',
-                background: 'var(--bg-elev)',
-                borderRadius: '16px',
-                border: '1px solid var(--border)',
-              }}
-            >
-              <div style={{ marginBottom: '8px' }}>
-                <time style={{ color: 'var(--text-mute)', fontSize: '0.875rem' }}>{date}</time>
-              </div>
-              <Link
-                href={`/about-me/log/${slug}`}
-                style={{ color: 'inherit', textDecoration: 'none' }}
-              >
-                <h3 style={{ fontSize: '1.25rem', fontWeight: 600, margin: '0 0 12px 0', color: 'var(--text)' }}>
-                  {title}
-                </h3>
-                {summary && (
-                  <p style={{ margin: 0, color: 'var(--text-dim)', lineHeight: 1.6 }}>
-                    {summary}
-                  </p>
-                )}
-              </Link>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'flex-end',
-                flexWrap: 'wrap',
-                gap: '9px',
-                marginTop: '18px',
-              }}>
-                <Link
-                  href={`/about-me/log/${slug}`}
-                  style={{
-                    minHeight: '34px',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    padding: '7px 11px',
-                    border: '1px solid var(--border)',
-                    borderRadius: '9px',
-                    color: 'var(--text-dim)',
-                    fontSize: '12.5px',
-                    fontWeight: 700,
-                    textDecoration: 'none',
-                  }}
-                >
-                  기록 읽기
-                </Link>
-                <AskAiButton
-                  question={`기록 「${title}」의 핵심 내용과 이 경험에서 얻은 관점을 자세히 설명해 주세요.`}
-                />
-              </div>
-            </article>
-          ))
-        )}
-      </section>
+      {allPostsData.length === 0 ? (
+        <p style={{ color: 'var(--text-mute)' }}>아직 등록된 글이 없습니다.</p>
+      ) : (
+        <LogEntries posts={allPostsData} />
+      )}
 
       <section style={{ 
         padding: '40px', 

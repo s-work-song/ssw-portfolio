@@ -7,6 +7,7 @@ import React from 'react';
 import Link from 'next/link';
 import { getPostData, getSortedPostsData } from '@/lib/posts';
 import ReactMarkdown from 'react-markdown';
+import styles from './page.module.css';
 
 export const dynamicParams = false;
 
@@ -31,79 +32,136 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 export default async function PostPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const postData = getPostData(slug);
+  const relatedPosts = getSortedPostsData()
+    .filter((post) => post.slug !== slug)
+    .slice(0, 3);
 
   return (
-    <article style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
-      
-      <header style={{ paddingBottom: '32px', borderBottom: '1px solid var(--border)' }}>
-        <Link href="/about-me/log" style={{ 
-          display: 'inline-flex', 
-          alignItems: 'center', 
-          gap: '8px', 
-          color: 'var(--text-dim)', 
-          textDecoration: 'none',
-          marginBottom: '24px',
-          fontWeight: 500
-        }}>
-          ← Back to List
-        </Link>
-        <h1 style={{ fontSize: 'clamp(1.65rem, 6vw, 2.5rem)', fontWeight: 700, margin: '0 0 16px 0', color: 'var(--text)', lineHeight: 1.2 }}>
-          {postData.title}
-        </h1>
-        <div style={{ color: 'var(--text-mute)', fontSize: '1rem' }}>
-          <time>{postData.date}</time>
-        </div>
-      </header>
+    <article className={styles.article}>
+      <div className={styles.readingSurface}>
+        <header className={styles.articleHeader}>
+          <div className={styles.titleRow}>
+            <h1 className={styles.articleTitle}>
+              {postData.title}
+            </h1>
+            <Link href="/about-me/log" className={styles.listButton}>
+              <span aria-hidden="true">←</span>
+              목록으로
+            </Link>
+          </div>
 
-      {/* Markdown Content rendered via ReactMarkdown */}
-      <div className="markdown-content" style={{
-        lineHeight: 1.8,
-        color: 'var(--text)',
-        fontSize: '1.125rem',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '24px'
-      }}>
-        <ReactMarkdown
-          components={{
-            h1: ({node, ...props}) => {
-              void node;
-              return <h1 style={{ fontSize: '2rem', fontWeight: 700, marginTop: '24px', marginBottom: '16px' }} {...props} />;
-            },
-            h2: ({node, ...props}) => {
-              void node;
-              return <h2 style={{ fontSize: '1.5rem', fontWeight: 600, marginTop: '24px', marginBottom: '16px' }} {...props} />;
-            },
-            h3: ({node, ...props}) => {
-              void node;
-              return <h3 style={{ fontSize: '1.25rem', fontWeight: 600, marginTop: '20px', marginBottom: '12px' }} {...props} />;
-            },
-            p: ({node, ...props}) => {
-              void node;
-              return <p style={{ margin: '0 0 16px 0', color: 'var(--text-dim)' }} {...props} />;
-            },
-            a: ({node, ...props}) => {
-              void node;
-              return <a className="markdown-link" {...props} />;
-            },
-            ul: ({node, ...props}) => {
-              void node;
-              return <ul style={{ paddingLeft: '24px', margin: '0 0 16px 0', color: 'var(--text-dim)' }} {...props} />;
-            },
-            li: ({node, ...props}) => {
-              void node;
-              return <li style={{ marginBottom: '8px' }} {...props} />;
-            },
-            blockquote: ({node, ...props}) => {
-              void node;
-              return <blockquote style={{ borderLeft: '4px solid var(--text)', paddingLeft: '16px', margin: '16px 0', fontStyle: 'italic', color: 'var(--text-dim)' }} {...props} />;
-            }
-          }}
-        >
-          {postData.content}
-        </ReactMarkdown>
+          {(postData.date || (postData.tags?.length ?? 0) > 0) && (
+            <div className={styles.articleMeta}>
+              {postData.date && <time>{postData.date}</time>}
+              {(postData.tags?.length ?? 0) > 0 && (
+                <div className={styles.tagList} aria-label="글 태그">
+                  {postData.tags?.map((tag) => (
+                    <span key={tag} className={styles.tag}>#{tag}</span>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </header>
+
+        {/* Markdown Content rendered via ReactMarkdown */}
+        <div className={`${styles.markdownBody} markdown-content`}>
+          <ReactMarkdown
+            components={{
+              h1: ({node, ...props}) => {
+                void node;
+                return <h2 className={styles.bodyH1} {...props} />;
+              },
+              h2: ({node, ...props}) => {
+                void node;
+                return <h2 className={styles.bodyH2} {...props} />;
+              },
+              h3: ({node, ...props}) => {
+                void node;
+                return <h3 className={styles.bodyH3} {...props} />;
+              },
+              p: ({node, ...props}) => {
+                void node;
+                return <p className={styles.bodyParagraph} {...props} />;
+              },
+              a: ({node, href, children, ...props}) => {
+                void node;
+                const isExternal = Boolean(href?.startsWith('http://') || href?.startsWith('https://'));
+                return (
+                  <a
+                    className={`${styles.markdownLink}${isExternal ? ` ${styles.externalLink}` : ''}`}
+                    href={href}
+                    target={isExternal ? '_blank' : undefined}
+                    rel={isExternal ? 'noopener noreferrer' : undefined}
+                    {...props}
+                  >
+                    {children}
+                  </a>
+                );
+              },
+              ul: ({node, ...props}) => {
+                void node;
+                return <ul className={styles.bodyList} {...props} />;
+              },
+              li: ({node, ...props}) => {
+                void node;
+                return <li className={styles.bodyListItem} {...props} />;
+              },
+              blockquote: ({node, ...props}) => {
+                void node;
+                return <blockquote className={styles.bodyBlockquote} {...props} />;
+              }
+            }}
+          >
+            {postData.content}
+          </ReactMarkdown>
+        </div>
       </div>
-      
+
+      <footer className={styles.articleFooter}>
+        {relatedPosts.length > 0 && (
+          <section aria-labelledby="related-posts-title">
+            <div className={styles.relatedHeader}>
+              <div>
+                <p className={styles.relatedEyebrow}>CONTINUE READING</p>
+                <h2 id="related-posts-title" className={styles.relatedTitle}>다른 기록</h2>
+              </div>
+              <Link href="/about-me/log" className={styles.footerListLink}>
+                전체 목록 보기
+                <span aria-hidden="true">→</span>
+              </Link>
+            </div>
+
+            <div className={styles.relatedGrid}>
+              {relatedPosts.map((post) => (
+                <Link
+                  key={post.slug}
+                  href={`/about-me/log/${post.slug}`}
+                  className={styles.relatedCard}
+                >
+                  {(post.tags?.length ?? 0) > 0 && (
+                    <div className={styles.cardTagList} aria-label="글 태그">
+                      {post.tags?.map((tag) => (
+                        <span key={tag}>#{tag}</span>
+                      ))}
+                    </div>
+                  )}
+                  <h3>{post.title}</h3>
+                  {post.summary && <p>{post.summary}</p>}
+                  <span className={styles.relatedArrow} aria-hidden="true">↗</span>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
+
+        <div className={styles.footerAction}>
+          <Link href="/about-me/log" className={styles.listButton}>
+            <span aria-hidden="true">←</span>
+            목록으로 돌아가기
+          </Link>
+        </div>
+      </footer>
     </article>
   );
 }

@@ -52,12 +52,22 @@ function generatePostsJson() {
       
       // gray-matter로 마크다운 상단 정보(Frontmatter) 영역과 실제 Markdown Content 본문 영역을 파싱
       const matterResult = matter(fileContents);
+      const tags = Array.isArray(matterResult.data.tags)
+        ? matterResult.data.tags
+            .map((tag) => String(tag).trim())
+            .filter(Boolean)
+        : [];
 
       // 개별 포스트 데이터 구조체 매핑 수행
       return {
         slug,
         title: matterResult.data.title || 'Untitled', // 제목이 없는 경우 방어 기본값 부여
-        date: matterResult.data.date || new Date().toISOString().split('T')[0], // 날짜 누락 시 현재 시간 할당
+        // 작성일을 공개하지 않는 글은 date를 생략한다. 빌드 날짜를 대신 넣으면
+        // 비공개 의도와 달리 배포 시점이 작성일처럼 노출되므로 자동 기본값을 두지 않는다.
+        date: matterResult.data.date || undefined,
+        // 날짜와 무관하게 목록 순서를 정할 수 있는 공개용 정렬 값이다.
+        order: Number.isFinite(matterResult.data.order) ? matterResult.data.order : undefined,
+        tags,
         summary: matterResult.data.summary || '', // 목록 요약글
         content: matterResult.content, // 실제 본문 마크다운 내용
       };
