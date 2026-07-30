@@ -196,7 +196,7 @@
    */
   .panelDocked .disclaimer {
     display: flex;
-    min-height: calc(76px + env(safe-area-inset-bottom));
+    min-height: calc(100px + env(safe-area-inset-bottom));
     box-sizing: border-box;
     align-items: center;
     padding: 8px 158px calc(8px + env(safe-area-inset-bottom)) 16px;

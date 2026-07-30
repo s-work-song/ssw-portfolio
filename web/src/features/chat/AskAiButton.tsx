@@ -12,12 +12,14 @@ interface AskAiButtonProps {
   question: string;
   label?: string;
   className?: string;
+  align?: "start" | "end";
 }
 
 export function AskAiButton({
   question,
   label = "AI에게 물어보기",
   className = "",
+  align = "start",
 }: AskAiButtonProps) {
   const { availability, isLoading, open, sendMessage } = useChat();
 
@@ -26,7 +28,9 @@ export function AskAiButton({
   return (
     <button
       type="button"
-      className={`${styles.button} ${className}`.trim()}
+      className={`${styles.button} ${
+        align === "end" ? styles.alignEnd : ""
+      } ${className}`.trim()}
       disabled={isLoading}
       onClick={() => {
         open();

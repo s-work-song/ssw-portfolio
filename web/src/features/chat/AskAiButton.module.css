@@ -29,6 +29,13 @@
   opacity: 0.56;
 }
 
+.alignEnd {
+  display: flex;
+  width: fit-content;
+  align-self: flex-end;
+  margin-left: auto;
+}
+
 .icon {
   display: grid;
   width: 21px;

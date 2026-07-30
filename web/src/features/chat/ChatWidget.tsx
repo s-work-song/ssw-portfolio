@@ -259,12 +259,18 @@ export function ChatWidget() {
   const [quickMenuOpen, setQuickMenuOpen] = useState(false);
   const [quickMenuClosing, setQuickMenuClosing] = useState(false);
   const quickMenuEnabled = fabMode === "quick-menu";
-  const quickMenuExpanded = quickMenuEnabled && quickMenuOpen && !isOpen;
-  const quickMenuRendered =
-    quickMenuEnabled && (quickMenuOpen || quickMenuClosing) && !isOpen;
   const isMobile = useMobileViewport();
   const isWideDesktop = useWideDesktopViewport();
   const isDocked = chatLayout === "dock" && isWideDesktop;
+  const quickMenuCanCoexistWithChat = !isOpen || isDocked;
+  const quickMenuExpanded =
+    quickMenuEnabled && quickMenuOpen && quickMenuCanCoexistWithChat;
+  const quickMenuRendered =
+    quickMenuEnabled &&
+    (quickMenuOpen || quickMenuClosing) &&
+    quickMenuCanCoexistWithChat;
+  const triggerControlsQuickMenu =
+    quickMenuEnabled && quickMenuCanCoexistWithChat;
   const visualViewportStyle = useVisualViewportStyle(isMobile);
   const rootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -671,8 +677,7 @@ export function ChatWidget() {
     isJelly ? ` ${JELLY_CONTENT_CLASS}` : ""
   }`;
   const rootClassName = `${styles.root} ${isOpen ? styles.rootOpen : ""}`;
-  const nextThemeMode =
-    mode === "system" ? "light" : mode === "light" ? "dark" : "system";
+  const nextThemeMode = mode === "light" ? "dark" : "light";
   const modeLabel = {
     system: "시스템",
     light: "라이트",
@@ -696,16 +701,16 @@ export function ChatWidget() {
   };
 
   const handleTriggerClick = () => {
-    if (isOpen) {
-      close();
-      return;
-    }
-    if (quickMenuEnabled) {
+    if (triggerControlsQuickMenu) {
       if (quickMenuExpanded) {
         closeQuickMenu();
       } else {
         openQuickMenu();
       }
+      return;
+    }
+    if (isOpen) {
+      close();
       return;
     }
     dismissQuickMenuImmediately();
@@ -1240,19 +1245,21 @@ export function ChatWidget() {
         }`}
         type="button"
         onClick={handleTriggerClick}
-        aria-expanded={isOpen || quickMenuExpanded}
+        aria-expanded={
+          triggerControlsQuickMenu ? quickMenuExpanded : isOpen
+        }
         aria-controls={
-          isOpen || !quickMenuEnabled
-            ? "portfolio-chat-dialog"
-            : "portfolio-quick-menu"
+          triggerControlsQuickMenu
+            ? "portfolio-quick-menu"
+            : "portfolio-chat-dialog"
         }
         aria-label={
-          isOpen
-            ? "채팅 닫기"
-            : quickMenuEnabled
-              ? quickMenuExpanded
-                ? "빠른 메뉴 닫기"
-                : "빠른 메뉴 열기"
+          triggerControlsQuickMenu
+            ? quickMenuExpanded
+              ? "빠른 메뉴 닫기"
+              : "빠른 메뉴 열기"
+            : isOpen
+              ? "채팅 닫기"
               : "포트폴리오 챗봇 열기"
         }
       >

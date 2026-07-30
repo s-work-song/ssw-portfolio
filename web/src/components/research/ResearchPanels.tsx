@@ -8,6 +8,7 @@ import Image from 'next/image';
 import CareerTimeline from '@/components/CareerTimeline';
 import { researchTimelineItems, type ResearchTabId } from '@/data/research';
 import { AskAiButton } from '@/features/chat';
+
 export default function ResearchPanels({ activeTab }: { activeTab: ResearchTabId }) {
   return (
     <div>
@@ -31,7 +32,7 @@ export default function ResearchPanels({ activeTab }: { activeTab: ResearchTabId
                 비트 수준 직렬화, 그리고 소형 무선 전송 대역폭까지 컴퓨팅 계층 전반을 수치와 실측 기반으로 독학하고 실험한 기록입니다.
               </p>
               <div style={{ marginTop: '16px' }}>
-                <AskAiButton question="포트폴리오의 실험 연구 동기와 연구 주제들이 어떤 흐름으로 연결되는지 설명해 주세요." />
+                <AskAiButton align="end" question="포트폴리오의 실험 연구 동기와 연구 주제들이 어떤 흐름으로 연결되는지 설명해 주세요." />
               </div>
             </section>
 
@@ -69,7 +70,7 @@ export default function ResearchPanels({ activeTab }: { activeTab: ResearchTabId
                   바이트 배열에서 범위 조건을 충족하는 값을 필터링하여 합산하는 동작을 표준 조건 분기, 부호 비트 트릭을 이용한 브랜치리스(Branchless),
                   그리고 256비트 AVX2 SIMD 벡터 연산으로 각각 구현하여 성능 차이를 정밀 검증했습니다.
                 </p>
-                <AskAiButton question="「분기 예측 실패 제거와 SIMD 벡터화」 실험의 가설, 구현 방식과 측정 결과를 설명해 주세요." />
+                <AskAiButton align="end" question="「분기 예측 실패 제거와 SIMD 벡터화」 실험의 가설, 구현 방식과 측정 결과를 설명해 주세요." />
               </div>
 
               {/* Code comparison container */}
@@ -353,7 +354,7 @@ return Vector256.Sum(accumulator) + ScalarSum(src[남은_청크..]);`}
                 바이트 배열(0~255)의 정렬에서 표준 `Array.Sort` O(N log N) 대비 카운팅 횟수가 제한적이라는 점을 활용하여 O(N) 계수 정렬(Counting Sort)을
                 포인터 연산(`unsafe`)과 루프 언롤링을 동원해 최적화하였습니다.
               </p>
-              <AskAiButton question="「바이트 배열 정렬 및 레지스터 스필링」 연구에서 선택한 최적화와 검증 결과를 설명해 주세요." />
+              <AskAiButton align="end" question="「바이트 배열 정렬 및 레지스터 스필링」 연구에서 선택한 최적화와 검증 결과를 설명해 주세요." />
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
                 <div style={{ background: 'var(--bg-elev-2)', borderRadius: '12px', padding: '16px', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -428,7 +429,7 @@ while (current < end) {
                 Unity ECS/DOTS 환경 설계 및 C# 고성능 처리를 분석하며 AoS(Array of Structs, 구조체의 배열)와
                 SoA(Struct of Arrays, 배열의 구조체) 레이아웃에 따른 하드웨어 L1/L2 캐시 라인(64바이트) 충전 효율을 비교 분석했습니다.
               </p>
-              <AskAiButton question="「AoS vs SoA 메모리 정렬 및 캐시 히트」 실험을 객체지향 구조와 데이터 지향 설계의 차이 중심으로 설명해 주세요." />
+              <AskAiButton align="end" question="「AoS vs SoA 메모리 정렬 및 캐시 히트」 실험을 객체지향 구조와 데이터 지향 설계의 차이 중심으로 설명해 주세요." />
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
                 <div style={{ padding: '16px', background: 'var(--bg-elev-2)', borderRadius: '12px', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -483,7 +484,7 @@ float[] vxs = new float[N];`}
                   10MB 대용량 텍스트 파일의 일치 여부를 대조하는 실험을 수행하며 OS의 가상 메모리 관리 기법을 응용한
                   메모리 매핑 파일(Memory Mapped File)과 일반 스트림 청크 비교 성능을 실측했습니다.
                 </p>
-                <AskAiButton question="「메모리 매핑 파일과 Stream 비교」 실험의 조건, 결과와 적용 판단 기준을 설명해 주세요." />
+                <AskAiButton align="end" question="「메모리 매핑 파일과 Stream 비교」 실험의 조건, 결과와 적용 판단 기준을 설명해 주세요." />
               </div>
 
               {/* MMF Table */}
@@ -626,7 +627,7 @@ float[] vxs = new float[N];`}
                 <p style={{ marginTop: '10px', fontSize: '0.95rem', lineHeight: 1.6, color: 'var(--text-dim)', wordBreak: 'keep-all' }}>
                   게임 입력 프레임 기록(마우스 좌표 양자화, 버튼 비트, 스크롤 정규화) 데이터를 다양한 포맷으로 직렬화 및 압축하여 물리적 전송 크기를 최소화하는 구조를 연구했습니다.
                 </p>
-                <AskAiButton question="「프레임 기록 직렬화 크기 최적화」에서 비교한 포맷과 압축 결과를 설명해 주세요." />
+                <AskAiButton align="end" question="「프레임 기록 직렬화 크기 최적화」에서 비교한 포맷과 압축 결과를 설명해 주세요." />
               </div>
 
               {/* Serialization Table */}
@@ -786,7 +787,7 @@ ulong restored = Bmi2.X64.ParallelBitDeposit(bits, mask);`}
                 직렬화 크기 감소가 연산 최적화보다 더 강력한 이유는 <strong>물리 계층 전송 속도</strong>가 최대의 병목이기 때문입니다.
                 L1 캐시와 블루투스 전송은 나노초당 처리량에서 최대 약 1,800만 배의 차이가 나므로, 대역폭이 좁아질수록 CPU 연산을 더 수행하더라도 압축하여 전송량을 줄이는 것이 훨씬 이득입니다.
               </p>
-              <AskAiButton question="「컴퓨팅 물리 계층별 대역폭과 전송 최적화」 실험이 실제 통신 구현에 어떻게 반영됐는지 설명해 주세요." />
+              <AskAiButton align="end" question="「컴퓨팅 물리 계층별 대역폭과 전송 최적화」 실험이 실제 통신 구현에 어떻게 반영됐는지 설명해 주세요." />
 
               {/* Bandwidth comparison */}
               <div style={{ overflowX: 'auto', marginTop: '8px' }}>
@@ -876,7 +877,7 @@ ulong restored = Bmi2.X64.ParallelBitDeposit(bits, mask);`}
                 최적화 로직과 반복되는 데이터 바인딩 코드 작성의 휴먼 에러를 막기 위해 C# Roslyn 컴파일러를 활용한
                 소스 생성기(Source Generator)를 구축했습니다.
               </p>
-              <AskAiButton question="「Roslyn 기반 메타 프로그래밍 및 코드 생성기」의 목적, 구현 범위와 효과를 설명해 주세요." />
+              <AskAiButton align="end" question="「Roslyn 기반 메타 프로그래밍 및 코드 생성기」의 목적, 구현 범위와 효과를 설명해 주세요." />
 
               <ul style={{ paddingLeft: '20px', margin: 0, color: 'var(--text-dim)', lineHeight: 1.7, fontSize: '0.95rem' }}>
                 <li><strong>리소스 매핑 자동화</strong>: 에셋이나 리소스 폴더의 구조적 변화를 분석하여 상응하는 Enum 클래스를 빌드 시점에 자동 생성합니다.</li>
@@ -907,7 +908,7 @@ ulong restored = Bmi2.X64.ParallelBitDeposit(bits, mask);`}
               <p style={{ margin: 0, fontSize: '0.95rem', lineHeight: 1.6, color: 'var(--text-dim)', wordBreak: 'keep-all' }}>
                 로컬 경량 LLM(Gemma, Llama) 구동 및 다양한 클라우드 기반 모델 연동 실무를 바탕으로 대형 언어 모델과의 유기적인 협업 체계를 테스트했습니다.
               </p>
-              <AskAiButton question="「생성형 AI 에이전틱 코딩 접목 실험」에서 AI에 맡긴 역할과 사람이 검증한 범위를 설명해 주세요." />
+              <AskAiButton align="end" question="「생성형 AI 에이전틱 코딩 접목 실험」에서 AI에 맡긴 역할과 사람이 검증한 범위를 설명해 주세요." />
 
               <ul style={{ paddingLeft: '20px', margin: 0, color: 'var(--text-dim)', lineHeight: 1.7, fontSize: '0.95rem' }}>
                 <li><strong>자동 테스트 설계</strong>: 작성된 로우레벨 최적화 및 BCL 함수에 대한 복잡한 경계 조건 케이스를 생성형 AI 프롬프트 체인으로 유도하여 단위 테스트(Unit Test)를 자동 구성 및 검증하는 가공 파이프라인을 운영했습니다.</li>

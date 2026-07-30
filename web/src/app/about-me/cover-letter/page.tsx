@@ -88,7 +88,7 @@ export default function CoverLetterPage() {
                 고등학생 때부터 컴퓨터 하드웨어에 대한 깊은 관심이 있었습니다. 단순히 이론적인 것에 그치지 않고, 직접 CPU 오버클럭을 하거나 RAID 환경을 구성하며 성능 개선을 두 눈으로 확인하고 검증하는 과정 자체에 큰 흥미를 느꼈습니다. 이러한 하드웨어에 대한 본질적인 탐구심은 이후 소프트웨어 엔지니어로 성장하는 데 강력한 밑거름이 되었습니다.
               </p>
               <div style={{ marginTop: '14px' }}>
-                <AskAiButton question="자기소개서의 「학창 시절부터 이어진 탐구심」이 현재 개발 방식에 어떻게 이어졌는지 사례와 함께 설명해 주세요." />
+                <AskAiButton align="end" question="자기소개서의 「학창 시절부터 이어진 탐구심」이 현재 개발 방식에 어떻게 이어졌는지 사례와 함께 설명해 주세요." />
               </div>
             </div>
           </div>
@@ -103,7 +103,7 @@ export default function CoverLetterPage() {
                 C#과 유니티를 시작으로 프로그래밍에 입문한 이후, 프레임워크를 수동적으로 가져다 쓰는 것을 넘어 동작 원리를 파고들었습니다. Winform에서 WPF로 마이그레이션하며 MVVM 패턴을 체득했고, 더 나아가 CPU의 비순차 실행이나 분기 예측, SIMD(AVX2)와 CUDA 등 하드웨어의 물리적 특성을 고려한 소프트웨어 성능 최적화 실험에 몰두해 왔습니다.
               </p>
               <div style={{ marginTop: '14px' }}>
-                <AskAiButton question="자기소개서의 「로우레벨에서 하이레벨까지」 경험을 기술 선택과 성능 최적화 사례 중심으로 자세히 설명해 주세요." />
+                <AskAiButton align="end" question="자기소개서의 「로우레벨에서 하이레벨까지」 경험을 기술 선택과 성능 최적화 사례 중심으로 자세히 설명해 주세요." />
               </div>
             </div>
           </div>
@@ -118,7 +118,7 @@ export default function CoverLetterPage() {
                 이제는 데이터의 직렬화 포맷을 비교 분석하고 자체적인 코드 제너레이터(Scaffold)를 구축하는 등, 생산성과 성능이라는 두 마리 토끼를 잡기 위해 끊임없이 고민하고 있습니다. 저는 주어지는 문제를 수동적으로 푸는 사람이 아니라, 스스로 문제를 정의하고 본질부터 파고듭니다.
               </p>
               <div style={{ marginTop: '14px' }}>
-                <AskAiButton question="「스스로 문제를 정의하는 메이커」라는 표현을 실제 프로젝트와 실험 사례를 들어 설명해 주세요." />
+                <AskAiButton align="end" question="「스스로 문제를 정의하는 메이커」라는 표현을 실제 프로젝트와 실험 사례를 들어 설명해 주세요." />
               </div>
             </div>
           </div>
@@ -138,7 +138,7 @@ export default function CoverLetterPage() {
               표면적인 문제보다 그 이면에 있는 진짜 원인을 찾아 해결합니다.
             </p>
             <div style={{ marginTop: '16px' }}>
-              <AskAiButton question="가치관 중 「본질 추구」가 실제 문제 해결 과정에서 드러난 사례를 알려 주세요." />
+              <AskAiButton align="end" question="가치관 중 「본질 추구」가 실제 문제 해결 과정에서 드러난 사례를 알려 주세요." />
             </div>
           </div>
 
@@ -149,7 +149,7 @@ export default function CoverLetterPage() {
               완벽함보다는 완성에 초점을 맞추며, 빠르게 검증하고 개선해 나갑니다.
             </p>
             <div style={{ marginTop: '16px' }}>
-              <AskAiButton question="가치관 중 「빠른 실행」을 POC와 검증 과정에서 어떻게 적용하는지 알려 주세요." />
+              <AskAiButton align="end" question="가치관 중 「빠른 실행」을 POC와 검증 과정에서 어떻게 적용하는지 알려 주세요." />
             </div>
           </div>
 
@@ -160,7 +160,7 @@ export default function CoverLetterPage() {
               솔직하게 공유하고 협력할 때 최고의 결과물이 나온다고 믿습니다.
             </p>
             <div style={{ marginTop: '16px' }}>
-              <AskAiButton question="가치관 중 「투명한 소통」을 협업에서 어떻게 실천하는지 알려 주세요." />
+              <AskAiButton align="end" question="가치관 중 「투명한 소통」을 협업에서 어떻게 실천하는지 알려 주세요." />
             </div>
           </div>
         </div>
