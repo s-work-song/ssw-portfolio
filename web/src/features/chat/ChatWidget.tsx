@@ -1150,9 +1150,11 @@ export function ChatWidget() {
                     )}
                   </form>
                   <p className={styles.disclaimer}>
-                    챗봇은 실수할 수 있습니다.
-                    <br />
-                    중요한 내용은 포트폴리오·공개 연락처로 확인해 주세요.
+                    <span>
+                      챗봇은 실수할 수 있습니다.
+                      <br />
+                      중요한 내용은 포트폴리오·공개 연락처로 확인해 주세요.
+                    </span>
                   </p>
                 </>
               )}
