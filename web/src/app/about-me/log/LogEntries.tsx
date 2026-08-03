@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import type { PostData } from "@/lib/posts";
+import { compareEnglishFirst } from "@/lib/textSort";
 import { AskAiButton } from "@/features/chat";
 import styles from "./LogEntries.module.css";
 
@@ -15,7 +16,8 @@ type LogEntriesProps = {
 export default function LogEntries({ posts }: LogEntriesProps) {
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const tags = useMemo(
-    () => Array.from(new Set(posts.flatMap((post) => post.tags ?? []))),
+    () => Array.from(new Set(posts.flatMap((post) => post.tags ?? [])))
+      .sort(compareEnglishFirst),
     [posts],
   );
   const visiblePosts = selectedTag

@@ -10,6 +10,7 @@
  * - 페이지가 저장 형식을 알지 않도록 목록/단건 조회로 감싸는 Repository 패턴을 적용하며, 현재 저장소가 JSON이라는 사실은 이 모듈 내부에만 남깁니다.
  */
 import postsData from '../content/posts.json';
+import { compareEnglishFirst } from './textSort';
 
 /**
  * @type PostData
@@ -30,10 +31,10 @@ const posts: PostData[] = postsData as PostData[];
 
 /**
  * @function getSortedPostsData
- * @description 전체 포스트 목록을 조회하여 최신 등록순(날짜 내림차순)으로 정렬된 데이터를 반환합니다.
+ * @description 전체 포스트 목록을 조회하여 영문 우선 제목 이름순으로 정렬된 데이터를 반환합니다.
  * - 목록 화면 렌더링 최적화를 위해 용량이 큰 본문(content) 데이터는 제외(Omit)하여 응답 메모리 대역폭을 최소화합니다.
  * 
- * @returns {Omit<PostData, 'content'>[]} 본문이 생략되고 날짜 정렬이 완료된 요약 포스트 정보 배열
+ * @returns {Omit<PostData, 'content'>[]} 본문이 생략되고 제목 정렬이 완료된 요약 포스트 정보 배열
  */
 export function getSortedPostsData(): Omit<PostData, 'content'>[] {
   return posts
@@ -46,15 +47,8 @@ export function getSortedPostsData(): Omit<PostData, 'content'>[] {
       summary,
     }))
     .sort((a, b) => {
-      // 날짜 비공개 글은 명시적인 order로 정렬하고, 기존 날짜형 글은
-      // 하위 호환을 위해 날짜 내림차순을 유지한다.
-      const orderDifference = (b.order ?? Number.NEGATIVE_INFINITY)
-        - (a.order ?? Number.NEGATIVE_INFINITY);
-      if (orderDifference !== 0) {
-        return orderDifference;
-      }
-
-      return (b.date ?? '').localeCompare(a.date ?? '');
+      const titleDifference = compareEnglishFirst(a.title, b.title);
+      return titleDifference || a.slug.localeCompare(b.slug);
     });
 }
 
