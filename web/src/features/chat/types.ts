@@ -51,7 +51,17 @@ export type ActionId =
   | "resume"
   | "cover_letter"
   | "research"
-  | "log";
+  | "log"
+  | "project_overview"
+  | "project_common_infrastructure"
+  | "project_ecommerce_demo"
+  | "project_game_collection"
+  | "project_code_archive"
+  | "research_timeline"
+  | "research_cpu"
+  | "research_memory"
+  | "research_serialization"
+  | "research_tools";
 
 export interface ChatHistoryItem {
   role: "user" | "assistant";

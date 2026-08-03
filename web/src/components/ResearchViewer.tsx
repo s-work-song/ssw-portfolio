@@ -16,6 +16,7 @@ import { useResearchTabs } from '@/components/research/useResearchTabs';
 import { useTheme } from '@/context/ThemeContext';
 
 const RESEARCH_PANEL_EXIT_DURATION_MS = 150;
+const RESEARCH_PANEL_ENTRY_FALLBACK_MS = 600;
 
 export default function ResearchViewer() {
   const { activeTab, selectTab } = useResearchTabs();
@@ -30,16 +31,35 @@ export default function ResearchViewer() {
     null,
   );
   const transitionTimerRef = React.useRef(0);
+  const entryTimerRef = React.useRef(0);
 
   React.useEffect(
     () => () => {
       window.clearTimeout(transitionTimerRef.current);
+      window.clearTimeout(entryTimerRef.current);
     },
     [],
   );
 
-  const selectResearchTab = (targetTab: ResearchTabId) => {
+  const completePanelEntry = React.useCallback(() => {
+    window.clearTimeout(entryTimerRef.current);
+    entryTimerRef.current = 0;
+    setAnimatedTab(null);
+  }, []);
+
+  const selectResearchTab = React.useCallback((targetTab: ResearchTabId) => {
     if (targetTab === activeTab) return;
+
+    const targetHash = `#research-panel-${targetTab}`;
+    if (window.location.hash !== targetHash) {
+      const targetUrl = new URL(window.location.href);
+      targetUrl.hash = targetHash;
+      window.history.replaceState(
+        window.history.state,
+        '',
+        `${targetUrl.pathname}${targetUrl.search}${targetUrl.hash}`,
+      );
+    }
 
     const currentIndex = researchTabs.findIndex((tab) => tab.id === activeTab);
     const targetIndex = researchTabs.findIndex((tab) => tab.id === targetTab);
@@ -52,6 +72,7 @@ export default function ResearchViewer() {
       (motion === 'system' &&
         window.matchMedia('(prefers-reduced-motion: reduce)').matches);
     if (pageTransition === 'none' || reduceMotion) {
+      window.clearTimeout(entryTimerRef.current);
       setAnimatedTab(null);
       selectTab(targetTab);
       return;
@@ -64,8 +85,27 @@ export default function ResearchViewer() {
       selectTab(targetTab);
       setExitingTab(null);
       transitionTimerRef.current = 0;
+      window.clearTimeout(entryTimerRef.current);
+      entryTimerRef.current = window.setTimeout(
+        completePanelEntry,
+        RESEARCH_PANEL_ENTRY_FALLBACK_MS,
+      );
     }, RESEARCH_PANEL_EXIT_DURATION_MS);
-  };
+  }, [activeTab, completePanelEntry, motion, pageTransition, selectTab]);
+
+  React.useEffect(() => {
+    const selectHashTarget = () => {
+      const prefix = '#research-panel-';
+      if (!window.location.hash.startsWith(prefix)) return;
+      const requestedId = window.location.hash.slice(prefix.length);
+      const requestedTab = researchTabs.find(({ id }) => id === requestedId);
+      if (requestedTab) selectResearchTab(requestedTab.id);
+    };
+
+    selectHashTarget();
+    window.addEventListener('hashchange', selectHashTarget);
+    return () => window.removeEventListener('hashchange', selectHashTarget);
+  }, [selectResearchTab]);
 
   const panelClassName = [
     'research-panel-content',
@@ -98,6 +138,11 @@ export default function ResearchViewer() {
           aria-labelledby={`research-tab-${activeTab}`}
           data-page-transition={pageTransition}
           data-page-direction={transitionDirection}
+          onAnimationEnd={(event) => {
+            if (event.currentTarget === event.target && exitingTab === null) {
+              completePanelEntry();
+            }
+          }}
         >
           <ResearchPanels activeTab={activeTab} />
         </div>

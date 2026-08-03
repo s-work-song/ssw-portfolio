@@ -7,7 +7,7 @@ import React from 'react';
 import Link from 'next/link';
 import AboutDecorativeGrid from '@/components/about/AboutDecorativeGrid';
 import AboutPanel from '@/components/about/AboutPanel';
-import { aboutDestinations } from '@/data/about';
+import { aboutDestinations, aboutProjects } from '@/data/about';
 
 export const metadata = {
   title: '소개 | Overview',
@@ -103,6 +103,63 @@ export default function OverviewPage() {
           </Link>
         ))}
       </div>
+
+      <AboutPanel id="featured-projects" tabIndex={-1} style={{
+        padding: 'clamp(20px, 5vw, 36px)',
+        borderRadius: '24px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '24px',
+        scrollMarginTop: '96px',
+      }}>
+        <div>
+          <p style={{ margin: '0 0 8px', color: 'var(--accent, #6366f1)', fontSize: '0.78rem', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase' }}>
+            Projects
+          </p>
+          <h3 style={{ margin: 0, color: 'var(--text)', fontSize: 'clamp(1.35rem, 3vw, 1.75rem)' }}>
+            대표 프로젝트
+          </h3>
+          <p style={{ margin: '10px 0 0', color: 'var(--text-dim)', lineHeight: 1.7, wordBreak: 'keep-all' }}>
+            요구사항과 운영 조건에 맞춰 구조와 기술을 선택하고, AI 에이전트의 구현 결과를 리뷰·테스트하며 진행한 프로젝트입니다.
+          </p>
+        </div>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))',
+          gap: '16px',
+        }}>
+          {aboutProjects.map((project) => (
+            <article
+              key={project.id}
+              id={project.id}
+              tabIndex={-1}
+              style={{
+                padding: '22px',
+                border: '1px solid var(--border)',
+                borderRadius: '16px',
+                background: 'var(--bg-elev-2)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '12px',
+                scrollMarginTop: '96px',
+              }}
+            >
+              <span style={{ color: 'var(--accent, #6366f1)', fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                {project.category}
+              </span>
+              <h4 style={{ margin: 0, color: 'var(--text)', fontSize: '1.12rem' }}>
+                {project.title}
+              </h4>
+              <p style={{ margin: 0, color: 'var(--text-dim)', lineHeight: 1.65, wordBreak: 'keep-all', flex: 1 }}>
+                {project.desc}
+              </p>
+              <span style={{ color: 'var(--text-mute)', fontSize: '0.82rem' }}>
+                {project.status}
+              </span>
+            </article>
+          ))}
+        </div>
+      </AboutPanel>
 
       {/* Bottom CTA to start with Resume */}
       <section style={{ 

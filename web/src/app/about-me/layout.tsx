@@ -11,6 +11,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useTheme } from '../../context/ThemeContext';
 
 const PAGE_EXIT_DURATION_MS = 150;
+const PAGE_ENTRY_FALLBACK_MS = 600;
 
 export default function AboutMeLayout({
   children,
@@ -25,6 +26,7 @@ export default function AboutMeLayout({
   >('forward');
   const [exitingPath, setExitingPath] = React.useState<string | null>(null);
   const navigationTimerRef = React.useRef(0);
+  const entryTimerRef = React.useRef(0);
 
   const tabs = [
     { label: "소개 (Overview)", shortLabel: "소개", href: "/about-me" },
@@ -37,6 +39,7 @@ export default function AboutMeLayout({
   const normalizePath = (path: string) =>
     path.length > 1 ? path.replace(/\/+$/, "") : path;
   const currentPath = normalizePath(pathname);
+  const [settledPath, setSettledPath] = React.useState(currentPath);
 
   /** 중첩 로그 경로까지 올바르게 활성화하되 Overview는 정확히 일치할 때만 선택한다. */
   const isActive = (href: string) => {
@@ -56,14 +59,33 @@ export default function AboutMeLayout({
   React.useEffect(() => {
     window.clearTimeout(navigationTimerRef.current);
     navigationTimerRef.current = 0;
-  }, [pathname]);
+
+    window.clearTimeout(entryTimerRef.current);
+    if (settledPath === currentPath) {
+      entryTimerRef.current = 0;
+      return;
+    }
+
+    entryTimerRef.current = window.setTimeout(() => {
+      setSettledPath(currentPath);
+      entryTimerRef.current = 0;
+    }, PAGE_ENTRY_FALLBACK_MS);
+  }, [currentPath, settledPath]);
 
   React.useEffect(
     () => () => {
       window.clearTimeout(navigationTimerRef.current);
+      window.clearTimeout(entryTimerRef.current);
     },
     [],
   );
+
+  const completePageEntry = () => {
+    if (exitingPath === pathname || settledPath === currentPath) return;
+    window.clearTimeout(entryTimerRef.current);
+    entryTimerRef.current = 0;
+    setSettledPath(currentPath);
+  };
 
   const navigateTab = (
     event: React.MouseEvent<HTMLAnchorElement>,
@@ -97,13 +119,14 @@ export default function AboutMeLayout({
     event.preventDefault();
     setExitingPath(pathname);
     navigationTimerRef.current = window.setTimeout(() => {
+      setExitingPath(null);
       router.push(targetPath);
     }, PAGE_EXIT_DURATION_MS);
   };
 
   const pageTransitionClassName = [
     'about-page-content',
-    pageTransition !== 'none'
+    pageTransition !== 'none' && settledPath !== currentPath
       ? `about-page-transition-${pageTransition}`
       : '',
     exitingPath === pathname ? 'about-page-content-exiting' : '',
@@ -176,6 +199,9 @@ export default function AboutMeLayout({
           className={pageTransitionClassName}
           data-page-transition={pageTransition}
           data-page-direction={transitionDirection}
+          onAnimationEnd={(event) => {
+            if (event.currentTarget === event.target) completePageEntry();
+          }}
         >
           {children}
         </main>

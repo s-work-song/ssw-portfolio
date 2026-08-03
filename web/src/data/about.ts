@@ -12,6 +12,14 @@ export interface AboutDestination {
   linkText: string;
 }
 
+export interface AboutProject {
+  id: string;
+  title: string;
+  category: string;
+  desc: string;
+  status: string;
+}
+
 export const aboutDestinations: AboutDestination[] = [
   {
     title: '이력서 (Resume)',
@@ -40,5 +48,36 @@ export const aboutDestinations: AboutDestination[] = [
     desc: '개발 및 일상 속에서 얻은 기술적 깨달음과 고민, 프로젝트를 되돌아보는 사후 회고를 기록하는 로그 블로그입니다.',
     emoji: '📝',
     linkText: '로그 게시글 읽기 →',
+  },
+];
+
+export const aboutProjects: AboutProject[] = [
+  {
+    id: 'project-common-infrastructure',
+    title: '공용 인프라 프로젝트군',
+    category: 'Shared Infrastructure',
+    desc: '인증·채팅·파일·미디어·알림·분석과 게이트웨이·설정·스케줄링·관측 기능을 여러 프로젝트에서 재사용할 수 있도록 분리한 프로젝트군입니다.',
+    status: '구조 및 설명 문서 준비 중',
+  },
+  {
+    id: 'project-ecommerce-demo',
+    title: '이커머스 데모',
+    category: 'Commerce Demo',
+    desc: '상품 조회, 장바구니, 주문과 관리자 흐름을 갖춘 데모입니다. 실제 결제는 포함하지 않으며 배너와 상품 이미지는 AI 도구로 제작했습니다.',
+    status: '공개용 사이트 준비 중',
+  },
+  {
+    id: 'project-game-collection-platform',
+    title: '게임 모음 플랫폼',
+    category: 'Game Platform',
+    desc: '오목·스네이크와 Three.js·WebGL 기반 비행 시뮬레이터를 한곳에 모으고, 게임 기록 저장과 랭킹 기능을 구성한 플랫폼입니다.',
+    status: '공개용 사이트 준비 중',
+  },
+  {
+    id: 'project-code-archive',
+    title: '코드 아카이브',
+    category: 'Verified Code Archive',
+    desc: 'AI로 구현한 코드를 테스트와 검증을 거쳐 고정 항목으로 등록하고, 주제·언어·식별 규칙에 따라 같은 검증 코드를 조회해 재사용하는 프로젝트입니다.',
+    status: '공개용 사이트 준비 중',
   },
 ];

@@ -149,6 +149,16 @@ export const ACTION_ROUTES: Readonly<Record<ActionId, string>> = {
   cover_letter: "/about-me/cover-letter#cover-letter-story",
   research: "/about-me/research#research-experiments",
   log: "/about-me/log#log-entries",
+  project_overview: "/about-me#featured-projects",
+  project_common_infrastructure: "/about-me#project-common-infrastructure",
+  project_ecommerce_demo: "/about-me#project-ecommerce-demo",
+  project_game_collection: "/about-me#project-game-collection-platform",
+  project_code_archive: "/about-me#project-code-archive",
+  research_timeline: "/about-me/research#research-panel-overview",
+  research_cpu: "/about-me/research#research-panel-cpu",
+  research_memory: "/about-me/research#research-panel-memory",
+  research_serialization: "/about-me/research#research-panel-serialization",
+  research_tools: "/about-me/research#research-panel-meta",
 };
 
 export const ACTION_LABELS: Readonly<Record<ActionId, string>> = {
@@ -157,6 +167,16 @@ export const ACTION_LABELS: Readonly<Record<ActionId, string>> = {
   cover_letter: "자기소개서 보기",
   research: "연구·기술 탐구 보기",
   log: "작업 기록 보기",
+  project_overview: "대표 프로젝트 보기",
+  project_common_infrastructure: "공용 인프라 보기",
+  project_ecommerce_demo: "이커머스 데모 보기",
+  project_game_collection: "게임 모음 플랫폼 보기",
+  project_code_archive: "코드 아카이브 보기",
+  research_timeline: "연구 여정 보기",
+  research_cpu: "CPU·SIMD 연구 보기",
+  research_memory: "메모리·파일 I/O 연구 보기",
+  research_serialization: "직렬화·전송 연구 보기",
+  research_tools: "도구·AI 연구 보기",
 };
 
 export const ACTION_IDS: readonly ActionId[] = [
@@ -165,6 +185,16 @@ export const ACTION_IDS: readonly ActionId[] = [
   "cover_letter",
   "research",
   "log",
+  "project_overview",
+  "project_common_infrastructure",
+  "project_ecommerce_demo",
+  "project_game_collection",
+  "project_code_archive",
+  "research_timeline",
+  "research_cpu",
+  "research_memory",
+  "research_serialization",
+  "research_tools",
 ];
 
 export function audienceToApi(choice: AudienceChoice | null): ApiAudience {
