@@ -2,9 +2,8 @@
 title: "RESTful과 RPC를 같은 방식으로 부르지 말아야 합니다"
 order: 170
 tags:
-  - API
+  - 개발
   - 설계
-  - 표준
 summary: "조직 내부의 API 규칙에 순응했던 경험을 돌아보며, RESTful과 RPC의 명칭을 구분하고 통용되는 정의를 지켜야 하는 이유를 정리합니다."
 ---
 
