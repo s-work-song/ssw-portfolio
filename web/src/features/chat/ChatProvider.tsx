@@ -188,6 +188,8 @@ export function ChatProvider({ children }: Readonly<{ children: ReactNode }>) {
   const closeTimerRef = useRef<number | null>(null);
   const actionScrollFrameRef = useRef<number | null>(null);
   const actionScrollTimerRef = useRef<number | null>(null);
+  const actionTargetHighlightTimerRef = useRef<number | null>(null);
+  const highlightedActionTargetRef = useRef<HTMLElement | null>(null);
   const isOpenRef = useRef(false);
   const isClosingRef = useRef(false);
   const cleanupHistoryPopRef = useRef(false);
@@ -332,6 +334,12 @@ export function ChatProvider({ children }: Readonly<{ children: ReactNode }>) {
       if (actionScrollTimerRef.current !== null) {
         window.clearTimeout(actionScrollTimerRef.current);
       }
+      if (actionTargetHighlightTimerRef.current !== null) {
+        window.clearTimeout(actionTargetHighlightTimerRef.current);
+      }
+      highlightedActionTargetRef.current?.removeAttribute(
+        "data-chat-action-target",
+      );
     },
     [],
   );
@@ -367,18 +375,47 @@ export function ChatProvider({ children }: Readonly<{ children: ReactNode }>) {
       window.clearTimeout(actionScrollTimerRef.current);
     }
 
+    const startedAt = window.performance.now();
     const scroll = () => {
+      if (pendingActionAnchorRef.current !== anchor) return;
       const target = document.getElementById(anchor);
-      if (!target) return;
+      if (!target) {
+        if (window.performance.now() - startedAt < 1_200) {
+          actionScrollTimerRef.current = window.setTimeout(scroll, 50);
+        }
+        return;
+      }
+
       pendingActionAnchorRef.current = null;
-      target.scrollIntoView({ behavior: "smooth", block: "start" });
+      actionScrollTimerRef.current = null;
+      target.scrollIntoView({
+        behavior: motionSuppressed ? "auto" : "smooth",
+        block: "start",
+      });
       target.focus({ preventScroll: true });
+
+      if (!motionSuppressed) {
+        if (actionTargetHighlightTimerRef.current !== null) {
+          window.clearTimeout(actionTargetHighlightTimerRef.current);
+        }
+        highlightedActionTargetRef.current?.removeAttribute(
+          "data-chat-action-target",
+        );
+        highlightedActionTargetRef.current = target;
+        target.setAttribute("data-chat-action-target", "true");
+        actionTargetHighlightTimerRef.current = window.setTimeout(() => {
+          target.removeAttribute("data-chat-action-target");
+          if (highlightedActionTargetRef.current === target) {
+            highlightedActionTargetRef.current = null;
+          }
+          actionTargetHighlightTimerRef.current = null;
+        }, 1_200);
+      }
     };
     actionScrollFrameRef.current = window.requestAnimationFrame(() => {
       actionScrollFrameRef.current = window.requestAnimationFrame(scroll);
     });
-    actionScrollTimerRef.current = window.setTimeout(scroll, 240);
-  }, []);
+  }, [motionSuppressed]);
 
   const navigateToActionTarget = useCallback(
     (route: string) => {
@@ -387,7 +424,7 @@ export function ChatProvider({ children }: Readonly<{ children: ReactNode }>) {
         hashIndex >= 0
           ? decodeURIComponent(route.slice(hashIndex + 1))
           : null;
-      router.push(route);
+      router.push(route, { scroll: false });
       scrollToPendingActionAnchor();
     },
     [router, scrollToPendingActionAnchor],

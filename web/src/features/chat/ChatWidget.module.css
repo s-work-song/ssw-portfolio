@@ -1036,6 +1036,7 @@
 }
 
 .composer button {
+  align-self: stretch;
   min-height: 42px;
   padding: 0 15px;
   border: 0;

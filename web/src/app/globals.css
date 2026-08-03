@@ -857,6 +857,8 @@ code {
 
 .about-page-content {
   min-width: 0;
+  opacity: 1;
+  transform: none;
 }
 
 .about-page-transition-slide,
@@ -868,7 +870,7 @@ code {
 
 .about-page-transition-slide {
   --about-page-slide-x: 14%;
-  animation: about-page-slide 340ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: about-page-slide 340ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
 }
 
 .about-page-transition-slide[data-page-direction="backward"] {
@@ -876,11 +878,11 @@ code {
 }
 
 .about-page-transition-fade {
-  animation: about-page-fade 260ms ease-out both;
+  animation: about-page-fade 260ms ease-out backwards;
 }
 
 .about-page-transition-lift {
-  animation: about-page-lift 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: about-page-lift 320ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
 }
 
 .about-page-content-exiting {
@@ -898,6 +900,8 @@ code {
 
 .research-panel-content {
   min-width: 0;
+  opacity: 1;
+  transform: none;
 }
 
 .research-panel-transition-slide,
@@ -909,7 +913,7 @@ code {
 
 .research-panel-transition-slide {
   --about-page-slide-x: 14%;
-  animation: about-page-slide 340ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: about-page-slide 340ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
 }
 
 .research-panel-transition-slide[data-page-direction="backward"] {
@@ -917,11 +921,11 @@ code {
 }
 
 .research-panel-transition-fade {
-  animation: about-page-fade 260ms ease-out both;
+  animation: about-page-fade 260ms ease-out backwards;
 }
 
 .research-panel-transition-lift {
-  animation: about-page-lift 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: about-page-lift 320ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
 }
 
 .research-panel-content-exiting {
@@ -966,6 +970,22 @@ code {
   to {
     opacity: 1;
     transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+[data-chat-action-target="true"] {
+  outline: 3px solid transparent;
+  outline-offset: 7px;
+  animation: chat-action-target-highlight 1.2s ease-out;
+}
+
+@keyframes chat-action-target-highlight {
+  0%,
+  24% {
+    outline-color: color-mix(in srgb, var(--accent) 72%, transparent);
+  }
+  100% {
+    outline-color: transparent;
   }
 }
 
