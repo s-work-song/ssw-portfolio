@@ -9,6 +9,8 @@ import CareerTimeline from '@/components/CareerTimeline';
 import { researchTimelineItems, type ResearchTabId } from '@/data/research';
 import { AskAiButton } from '@/features/chat';
 
+const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? '';
+
 export default function ResearchPanels({ activeTab }: { activeTab: ResearchTabId }) {
   return (
     <div>
@@ -145,7 +147,7 @@ return Vector256.Sum(accumulator) + ScalarSum(src[남은_청크..]);`}
                 </div>
                 <div style={{ overflow: 'hidden', borderRadius: '12px', border: '1px solid var(--border)' }}>
                   <Image
-                    src="/images/cpu-benchmark-report.png"
+                    src={`${basePath}/images/cpu-benchmark-report.png`}
                     alt="BenchmarkDotNet 실측 결과: 100만 바이트 배열에서 표준 분기 5,341.20 μs, AVX2 SIMD 병렬 처리 11.00 μs"
                     width={1350}
                     height={748}
