@@ -420,14 +420,33 @@ export function ChatProvider({ children }: Readonly<{ children: ReactNode }>) {
   const navigateToActionTarget = useCallback(
     (route: string) => {
       const hashIndex = route.indexOf("#");
-      pendingActionAnchorRef.current =
+      const actionAnchor =
         hashIndex >= 0
           ? decodeURIComponent(route.slice(hashIndex + 1))
           : null;
+      pendingActionAnchorRef.current = actionAnchor;
+
+      const normalizePath = (value: string) =>
+        value.length > 1 ? value.replace(/\/+$/, "") : value;
+      const routePath = hashIndex >= 0 ? route.slice(0, hashIndex) : route;
+      if (
+        actionAnchor &&
+        normalizePath(routePath) === normalizePath(pathname)
+      ) {
+        const targetHash = `#${encodeURIComponent(actionAnchor)}`;
+        if (window.location.hash === targetHash) {
+          window.dispatchEvent(new HashChangeEvent("hashchange"));
+        } else {
+          window.location.hash = targetHash;
+        }
+        scrollToPendingActionAnchor();
+        return;
+      }
+
       router.push(route, { scroll: false });
       scrollToPendingActionAnchor();
     },
-    [router, scrollToPendingActionAnchor],
+    [pathname, router, scrollToPendingActionAnchor],
   );
 
   useEffect(() => {
