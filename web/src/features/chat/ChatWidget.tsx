@@ -14,6 +14,7 @@ import {
   type PointerEvent as ReactPointerEvent,
 } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import {
   CHAT_DOCK_DEFAULT_WIDTH,
@@ -49,6 +50,10 @@ const JELLY_CONTENT_CLASS = "chat-content-wrapper";
 const QUICK_START_OPTION_BY_ACTION_ID = new Map(
   CHAT_QUICK_START_OPTIONS.map((option) => [option.actionId, option] as const),
 );
+const QUICK_ACTION_COMPLEMENTS: Partial<Record<ActionId, ActionId>> = {
+  project_overview: "research_optimization",
+  research_optimization: "project_overview",
+};
 
 const AUDIENCE_PROMPTS: Readonly<Record<AudienceChoice, string>> = {
   recruiter:
@@ -81,21 +86,56 @@ type VisualViewportStyle = CSSProperties &
     string
   >;
 
-function visibleResponseActions(actions: readonly ChatAction[]) {
-  return actions.filter((action) => action.id !== "overview");
+function quickDestinationFromLocation(
+  pathname: string,
+  hash: string,
+): ActionId | null {
+  const normalizedPath = pathname.replace(/\/+$/u, "") || "/";
+  const anchor = hash.replace(/^#/u, "");
+  if (
+    normalizedPath.endsWith("/about-me") &&
+    anchor === "featured-projects"
+  ) {
+    return "project_overview";
+  }
+  if (
+    normalizedPath.endsWith("/about-me/research") &&
+    anchor === "research-optimization-overview"
+  ) {
+    return "research_optimization";
+  }
+  return null;
 }
 
-function summaryActionsForMessage(message: ChatMessage) {
+function visibleResponseActions(
+  actions: readonly ChatAction[],
+  activeQuickDestination: ActionId | null,
+) {
+  return actions.filter(
+    (action) =>
+      action.id !== "overview" && action.id !== activeQuickDestination,
+  );
+}
+
+function summaryActionsForMessage(
+  message: ChatMessage,
+  activeQuickDestination: ActionId | null,
+  includeComplement: boolean,
+) {
   const segments = message.segments ?? [];
   const inlineActionIds = new Set(
     segments.flatMap((segment) =>
-      visibleResponseActions(segment.actions).map((action) => action.id),
+      visibleResponseActions(
+        segment.actions,
+        activeQuickDestination,
+      ).map((action) => action.id),
     ),
   );
   const seen = new Set<string>();
-  return (message.actions ?? []).filter((action) => {
+  const actions = (message.actions ?? []).filter((action) => {
     if (
       action.id === "overview" ||
+      action.id === activeQuickDestination ||
       inlineActionIds.has(action.id) ||
       seen.has(action.id)
     ) {
@@ -104,6 +144,26 @@ function summaryActionsForMessage(message: ChatMessage) {
     seen.add(action.id);
     return true;
   });
+
+  const complementId = activeQuickDestination
+    ? QUICK_ACTION_COMPLEMENTS[activeQuickDestination]
+    : undefined;
+  const complementOption = complementId
+    ? QUICK_START_OPTION_BY_ACTION_ID.get(complementId)
+    : undefined;
+  if (
+    includeComplement &&
+    complementOption &&
+    !inlineActionIds.has(complementOption.actionId) &&
+    !seen.has(complementOption.actionId)
+  ) {
+    actions.push({
+      id: complementOption.actionId,
+      label: complementOption.label,
+    });
+  }
+
+  return actions;
 }
 
 function ResponseActionButton({
@@ -260,6 +320,7 @@ function useVisualViewportStyle(
 }
 
 export function ChatWidget() {
+  const pathname = usePathname();
   const {
     fabMode,
     fabAnim,
@@ -300,6 +361,8 @@ export function ChatWidget() {
   const [usedSuggestedQuestionKeys, setUsedSuggestedQuestionKeys] = useState<
     ReadonlySet<string>
   >(() => new Set());
+  const [activeQuickDestination, setActiveQuickDestination] =
+    useState<ActionId | null>(null);
   const [quickMenuOpen, setQuickMenuOpen] = useState(false);
   const [quickMenuClosing, setQuickMenuClosing] = useState(false);
   const quickMenuEnabled = fabMode === "quick-menu";
@@ -344,6 +407,14 @@ export function ChatWidget() {
       ? latestMessage.id
       : null;
   }, [isLoading, messages]);
+  const latestActionMessageId = useMemo(() => {
+    if (isLoading) return null;
+    const latestMessage = messages[messages.length - 1];
+    return latestMessage?.role === "assistant" &&
+      latestMessage.generationState === "complete"
+      ? latestMessage.id
+      : null;
+  }, [isLoading, messages]);
   const visibleSuggestedQuestions = useMemo(() => {
     if (!latestSuggestionMessageId) return [];
 
@@ -372,6 +443,7 @@ export function ChatWidget() {
       actionId: (typeof CHAT_QUICK_START_OPTIONS)[number]["actionId"],
       audienceOverride: AudienceChoice,
     ) => {
+      setActiveQuickDestination(actionId);
       void sendMessage(prompt, audienceOverride);
       window.requestAnimationFrame(() => navigateAction(actionId));
     },
@@ -389,10 +461,23 @@ export function ChatWidget() {
         );
         return;
       }
+      setActiveQuickDestination(null);
       navigateAction(actionId);
     },
     [navigateAction, startQuickAction],
   );
+
+  useEffect(() => {
+    const syncQuickDestination = () => {
+      setActiveQuickDestination(
+        quickDestinationFromLocation(pathname, window.location.hash),
+      );
+    };
+    syncQuickDestination();
+    window.addEventListener("hashchange", syncQuickDestination);
+    return () =>
+      window.removeEventListener("hashchange", syncQuickDestination);
+  }, [pathname]);
 
   const askSuggestedQuestion = useCallback(
     (question: string) => {
@@ -1021,6 +1106,7 @@ export function ChatWidget() {
                           ).map((segment, segmentIndex) => {
                             const segmentActions = visibleResponseActions(
                               segment.actions,
+                              activeQuickDestination,
                             );
                             return (
                               <div
@@ -1074,7 +1160,11 @@ export function ChatWidget() {
                       ) : (
                         <p className={styles.messageText}>{message.content}</p>
                       )}
-                      {summaryActionsForMessage(message).length > 0 && (
+                      {summaryActionsForMessage(
+                        message,
+                        activeQuickDestination,
+                        message.id === latestActionMessageId,
+                      ).length > 0 && (
                         <nav
                           className={[
                             styles.actions,
@@ -1087,7 +1177,11 @@ export function ChatWidget() {
                             .join(" ")}
                           aria-label="관련 페이지"
                         >
-                          {summaryActionsForMessage(message).map((action) => (
+                          {summaryActionsForMessage(
+                            message,
+                            activeQuickDestination,
+                            message.id === latestActionMessageId,
+                          ).map((action) => (
                             <ResponseActionButton
                               key={action.id}
                               action={action}
