@@ -439,6 +439,61 @@
   font-weight: 650;
 }
 
+.quickStartGroup {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--chat-border);
+}
+
+.onboardingGroupLabel {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--chat-dim);
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: 0.04em;
+}
+
+.quickStartGroup .onboardingGroupLabel {
+  margin-bottom: 0;
+}
+
+.quickStartOptions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.quickStartOptions button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+  padding: 9px 10px;
+  border: 1px solid color-mix(in srgb, var(--chat-accent) 38%, var(--chat-border));
+  border-radius: 11px;
+  background: color-mix(in srgb, var(--chat-accent) 9%, var(--chat-bg));
+  color: var(--chat-text);
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 700;
+  text-align: left;
+}
+
+.quickStartOptions button:hover {
+  border-color: var(--chat-accent);
+  color: var(--chat-accent);
+  transform: translateY(-1px);
+}
+
+.quickStartOptions button:focus-visible {
+  outline: 2px solid var(--chat-accent);
+  outline-offset: 2px;
+}
+
 .audienceOptions {
   display: flex;
   flex-wrap: wrap;
@@ -815,6 +870,31 @@
   --completion-delay: 220ms;
   padding-top: 10px;
   border-top: 1px solid var(--chat-border);
+}
+
+.actions .responseQuickAction {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 9px;
+  border-color: color-mix(in srgb, var(--chat-accent) 42%, var(--chat-border));
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--chat-accent) 9%, var(--chat-bg));
+  font-weight: 750;
+  text-align: left;
+}
+
+.actions .responseQuickAction:hover {
+  background: color-mix(in srgb, var(--chat-accent) 14%, var(--chat-bg));
+}
+
+.responseQuickActionArrow {
+  color: var(--chat-accent);
+  transition: transform 160ms ease;
+}
+
+.responseQuickAction:hover .responseQuickActionArrow {
+  transform: translateX(2px);
 }
 
 .suggestedQuestions {

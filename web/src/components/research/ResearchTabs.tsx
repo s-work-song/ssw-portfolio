@@ -36,8 +36,9 @@ export default function ResearchTabs({
         border: isSecondary ? '1px solid var(--border)' : 'none',
         borderBottom: isSecondary ? undefined : '1px solid var(--border)',
         borderRadius: isSecondary ? '14px' : undefined,
-        padding: isSecondary ? '7px' : undefined,
-        paddingBottom: isSecondary ? '7px' : '4px',
+        // primary 탭의 강조 애니메이션은 위로 이동하며 외곽 광택을 만든다.
+        // 가로 스크롤 컨테이너가 이를 자르지 않도록 효과 범위만큼 안쪽 여백을 둔다.
+        padding: isSecondary ? '7px' : '9px 9px 7px',
         gap: '8px',
         overflowX: 'auto',
         WebkitOverflowScrolling: 'touch',

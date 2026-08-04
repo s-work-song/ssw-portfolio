@@ -143,6 +143,28 @@ export const AUDIENCE_OPTIONS: ReadonlyArray<{
   { value: "casual", apiValue: "casual", label: "가볍게 둘러보기" },
 ];
 
+/** 첫 대화에서 질문 전송과 콘텐츠 이동을 함께 시작하는 바로가기다. */
+export const CHAT_QUICK_START_OPTIONS: ReadonlyArray<{
+  actionId: ActionId;
+  audience: AudienceChoice;
+  label: string;
+  prompt: string;
+}> = [
+  {
+    actionId: "project_overview",
+    audience: "casual",
+    label: "대표 프로젝트 보기",
+    prompt: "대표 프로젝트 4개의 목적과 차이를 간단히 소개해 주세요.",
+  },
+  {
+    actionId: "research_optimization",
+    audience: "developer",
+    label: "최적화 개요 보기",
+    prompt:
+      "성능 최적화 연구를 CPU, 메모리·파일 I/O, 직렬화·전송 관점으로 나누어 개요를 설명해 주세요.",
+  },
+];
+
 export const ACTION_ROUTES: Readonly<Record<ActionId, string>> = {
   overview: "/about-me#portfolio-overview",
   resume: "/about-me/resume#resume-experience-skills",

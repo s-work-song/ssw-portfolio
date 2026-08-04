@@ -24,12 +24,18 @@ import {
 import ElasticJellyPanel from "../../lib/ElasticJellyPanel";
 import {
   AUDIENCE_OPTIONS,
+  CHAT_QUICK_START_OPTIONS,
   REASONING_CONTROLS_ENABLED,
   TONE_OPTIONS,
 } from "./constants";
 import { useChat } from "./ChatContext";
 import { StreamingText } from "./StreamingText";
-import type { AudienceChoice, ChatMessage } from "./types";
+import type {
+  ActionId,
+  AudienceChoice,
+  ChatAction,
+  ChatMessage,
+} from "./types";
 import styles from "./ChatWidget.module.css";
 
 const MOBILE_QUERY = "(max-width: 720px)";
@@ -39,6 +45,10 @@ const KEYBOARD_SETTLE_DELAY_MS = 220;
 const QUICK_MENU_EXIT_DURATION_MS = 520;
 /** 젤리 엔진이 콘텐츠 래퍼를 찾을 때 쓰는 전역 클래스명(엔진 계약)이다. */
 const JELLY_CONTENT_CLASS = "chat-content-wrapper";
+
+const QUICK_START_OPTION_BY_ACTION_ID = new Map(
+  CHAT_QUICK_START_OPTIONS.map((option) => [option.actionId, option] as const),
+);
 
 const AUDIENCE_PROMPTS: Readonly<Record<AudienceChoice, string>> = {
   recruiter:
@@ -71,19 +81,54 @@ type VisualViewportStyle = CSSProperties &
     string
   >;
 
+function visibleResponseActions(actions: readonly ChatAction[]) {
+  return actions.filter((action) => action.id !== "overview");
+}
+
 function summaryActionsForMessage(message: ChatMessage) {
   const segments = message.segments ?? [];
   const inlineActionIds = new Set(
     segments.flatMap((segment) =>
-      segment.actions.map((action) => action.id),
+      visibleResponseActions(segment.actions).map((action) => action.id),
     ),
   );
   const seen = new Set<string>();
   return (message.actions ?? []).filter((action) => {
-    if (inlineActionIds.has(action.id) || seen.has(action.id)) return false;
+    if (
+      action.id === "overview" ||
+      inlineActionIds.has(action.id) ||
+      seen.has(action.id)
+    ) {
+      return false;
+    }
     seen.add(action.id);
     return true;
   });
+}
+
+function ResponseActionButton({
+  action,
+  onActivate,
+}: {
+  action: ChatAction;
+  onActivate: (actionId: ActionId) => void;
+}) {
+  const quickStartOption = QUICK_START_OPTION_BY_ACTION_ID.get(action.id);
+
+  return (
+    <button
+      type="button"
+      className={quickStartOption ? styles.responseQuickAction : undefined}
+      onClick={() => onActivate(action.id)}
+    >
+      <span>{quickStartOption?.label ?? action.label}</span>
+      {quickStartOption && (
+        <span className={styles.responseQuickActionArrow} aria-hidden="true">
+          →
+        </span>
+      )}
+    </button>
+  );
 }
 
 function suggestedQuestionKey(question: string): string {
@@ -320,6 +365,34 @@ export function ChatWidget() {
       return true;
     });
   }, [latestSuggestionMessageId, messages, usedSuggestedQuestionKeys]);
+
+  const startQuickAction = useCallback(
+    (
+      prompt: string,
+      actionId: (typeof CHAT_QUICK_START_OPTIONS)[number]["actionId"],
+      audienceOverride: AudienceChoice,
+    ) => {
+      void sendMessage(prompt, audienceOverride);
+      window.requestAnimationFrame(() => navigateAction(actionId));
+    },
+    [navigateAction, sendMessage],
+  );
+
+  const activateResponseAction = useCallback(
+    (actionId: ActionId) => {
+      const quickStartOption = QUICK_START_OPTION_BY_ACTION_ID.get(actionId);
+      if (quickStartOption) {
+        startQuickAction(
+          quickStartOption.prompt,
+          quickStartOption.actionId,
+          quickStartOption.audience,
+        );
+        return;
+      }
+      navigateAction(actionId);
+    },
+    [navigateAction, startQuickAction],
+  );
 
   const askSuggestedQuestion = useCallback(
     (question: string) => {
@@ -945,55 +1018,58 @@ export function ChatWidget() {
                           {(message.segments?.length
                             ? message.segments
                             : [{ markdown: message.content, actions: [] }]
-                          ).map((segment, segmentIndex) => (
-                            <div
-                              className={styles.answerSegment}
-                              key={`${message.id}-segment-${segmentIndex}`}
-                            >
-                              <div className={styles.markdownMessage}>
-                                <ReactMarkdown
-                                  skipHtml
-                                  components={{
-                                    a: ({ children }) => <>{children}</>,
-                                    img: () => null,
-                                  }}
-                                >
-                                  {segment.markdown}
-                                </ReactMarkdown>
+                          ).map((segment, segmentIndex) => {
+                            const segmentActions = visibleResponseActions(
+                              segment.actions,
+                            );
+                            return (
+                              <div
+                                className={styles.answerSegment}
+                                key={`${message.id}-segment-${segmentIndex}`}
+                              >
+                                <div className={styles.markdownMessage}>
+                                  <ReactMarkdown
+                                    skipHtml
+                                    components={{
+                                      a: ({ children }) => <>{children}</>,
+                                      img: () => null,
+                                    }}
+                                  >
+                                    {segment.markdown}
+                                  </ReactMarkdown>
+                                </div>
+                                {segmentActions.length > 0 && (
+                                  <nav
+                                    className={[
+                                      styles.actions,
+                                      styles.inlineActions,
+                                      revealCompletionControls
+                                        ? styles.completionActions
+                                        : "",
+                                    ]
+                                      .filter(Boolean)
+                                      .join(" ")}
+                                    aria-label="이 문단과 관련된 페이지"
+                                    style={
+                                      {
+                                        "--completion-delay": `${
+                                          80 + segmentIndex * 70
+                                        }ms`,
+                                      } as CSSProperties
+                                    }
+                                  >
+                                    {segmentActions.map((action) => (
+                                      <ResponseActionButton
+                                        key={action.id}
+                                        action={action}
+                                        onActivate={activateResponseAction}
+                                      />
+                                    ))}
+                                  </nav>
+                                )}
                               </div>
-                              {segment.actions.length > 0 && (
-                                <nav
-                                  className={[
-                                    styles.actions,
-                                    styles.inlineActions,
-                                    revealCompletionControls
-                                      ? styles.completionActions
-                                      : "",
-                                  ]
-                                    .filter(Boolean)
-                                    .join(" ")}
-                                  aria-label="이 문단과 관련된 페이지"
-                                  style={
-                                    {
-                                      "--completion-delay": `${
-                                        80 + segmentIndex * 70
-                                      }ms`,
-                                    } as CSSProperties
-                                  }
-                                >
-                                  {segment.actions.map((action) => (
-                                    <button
-                                      key={action.id}
-                                      type="button"
-                                      onClick={() => navigateAction(action.id)}
-                                    >
-                                      {action.label}
-                                    </button>
-                                  ))}
-                                </nav>
-                              )}
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       ) : (
                         <p className={styles.messageText}>{message.content}</p>
@@ -1012,13 +1088,11 @@ export function ChatWidget() {
                           aria-label="관련 페이지"
                         >
                           {summaryActionsForMessage(message).map((action) => (
-                            <button
+                            <ResponseActionButton
                               key={action.id}
-                              type="button"
-                              onClick={() => navigateAction(action.id)}
-                            >
-                              {action.label}
-                            </button>
+                              action={action}
+                              onActivate={activateResponseAction}
+                            />
                           ))}
                         </nav>
                       )}
@@ -1056,6 +1130,32 @@ export function ChatWidget() {
                           <legend>
                             어떤 내용이 궁금한가요? 선택하면 맞춤 소개를 시작해요.
                           </legend>
+                          <div className={styles.quickStartGroup}>
+                            <span className={styles.onboardingGroupLabel}>
+                              바로 보기
+                            </span>
+                            <div className={styles.quickStartOptions}>
+                              {CHAT_QUICK_START_OPTIONS.map((option) => (
+                                <button
+                                  key={option.actionId}
+                                  type="button"
+                                  onClick={() =>
+                                    startQuickAction(
+                                      option.prompt,
+                                      option.actionId,
+                                      option.audience,
+                                    )
+                                  }
+                                >
+                                  <span>{option.label}</span>
+                                  <span aria-hidden="true">→</span>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                          <span className={styles.onboardingGroupLabel}>
+                            관점 선택
+                          </span>
                           <div className={styles.audienceOptions}>
                             {AUDIENCE_OPTIONS.map((option) => (
                               <button
