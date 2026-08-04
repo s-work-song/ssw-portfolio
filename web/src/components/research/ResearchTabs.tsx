@@ -11,23 +11,37 @@ export default function ResearchTabs({
   activeTab,
   onSelect,
   actionTargetTab = null,
+  ariaLabel = '연구 세부 주제',
+  tabIdPrefix = 'research-tab',
+  panelIdPrefix = 'research-panel',
+  variant = 'primary',
 }: {
-  tabs: ResearchTab[];
+  tabs: readonly ResearchTab[];
   activeTab: ResearchTabId;
   onSelect: (tab: ResearchTabId) => void;
   actionTargetTab?: ResearchTabId | null;
+  ariaLabel?: string;
+  tabIdPrefix?: string;
+  panelIdPrefix?: string;
+  variant?: 'primary' | 'secondary';
 }) {
+  const isSecondary = variant === 'secondary';
+
   return (
     <nav
-      aria-label="연구 세부 주제"
+      aria-label={ariaLabel}
       role="tablist"
       style={{
         display: 'flex',
-        borderBottom: '1px solid var(--border)',
-        paddingBottom: '4px',
+        border: isSecondary ? '1px solid var(--border)' : 'none',
+        borderBottom: isSecondary ? undefined : '1px solid var(--border)',
+        borderRadius: isSecondary ? '14px' : undefined,
+        padding: isSecondary ? '7px' : undefined,
+        paddingBottom: isSecondary ? '7px' : '4px',
         gap: '8px',
         overflowX: 'auto',
         WebkitOverflowScrolling: 'touch',
+        background: isSecondary ? 'var(--bg-elev-2)' : undefined,
       }}
     >
       {tabs.map((tab) => {
@@ -35,11 +49,11 @@ export default function ResearchTabs({
         return (
           <button
             key={tab.id}
-            id={`research-tab-${tab.id}`}
+            id={`${tabIdPrefix}-${tab.id}`}
             type="button"
             role="tab"
             aria-selected={isActive}
-            aria-controls={`research-panel-${tab.id}`}
+            aria-controls={`${panelIdPrefix}-${tab.id}`}
             data-chat-action-research-tab-target={
               actionTargetTab === tab.id ? 'true' : undefined
             }
@@ -47,11 +61,13 @@ export default function ResearchTabs({
             style={{
               background: isActive ? 'var(--bg-elev)' : 'transparent',
               border: '1px solid ' + (isActive ? 'var(--border-strong)' : 'transparent'),
-              borderBottom: '2px solid ' + (isActive ? 'var(--accent, #6366f1)' : 'transparent'),
+              borderBottom: isSecondary
+                ? '1px solid ' + (isActive ? 'var(--border-strong)' : 'transparent')
+                : '2px solid ' + (isActive ? 'var(--accent, #6366f1)' : 'transparent'),
               color: isActive ? 'var(--text)' : 'var(--text-dim)',
-              padding: '10px 16px',
-              borderRadius: '8px 8px 0 0',
-              fontSize: '0.9375rem',
+              padding: isSecondary ? '9px 14px' : '10px 16px',
+              borderRadius: isSecondary ? '9px' : '8px 8px 0 0',
+              fontSize: isSecondary ? '0.875rem' : '0.9375rem',
               fontWeight: isActive ? 700 : 500,
               cursor: 'pointer',
               display: 'flex',

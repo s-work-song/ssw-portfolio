@@ -1173,10 +1173,8 @@ export function ChatProvider({ children }: Readonly<{ children: ReactNode }>) {
     }
   }, []);
 
-  const navigateAction = useCallback(
-    (id: ActionId) => {
-      const route = ACTION_ROUTES[id];
-      if (!route) return;
+  const navigateRoute = useCallback(
+    (route: string) => {
       if (
         window.matchMedia(MOBILE_QUERY).matches &&
         isOpenRef.current
@@ -1191,6 +1189,14 @@ export function ChatProvider({ children }: Readonly<{ children: ReactNode }>) {
       navigateToActionTarget(route);
     },
     [beginMobileClose, navigateToActionTarget],
+  );
+
+  const navigateAction = useCallback(
+    (id: ActionId) => {
+      const route = ACTION_ROUTES[id];
+      if (route) navigateRoute(route);
+    },
+    [navigateRoute],
   );
 
   const value = useMemo<ChatContextValue>(
@@ -1224,6 +1230,7 @@ export function ChatProvider({ children }: Readonly<{ children: ReactNode }>) {
       sendMessage,
       stopGenerating,
       retry,
+      navigateRoute,
       navigateAction,
     }),
     [
@@ -1238,6 +1245,7 @@ export function ChatProvider({ children }: Readonly<{ children: ReactNode }>) {
       isClosing,
       messages,
       navigateAction,
+      navigateRoute,
       open,
       close,
       completeCloseAnimation,

@@ -6,6 +6,10 @@
  */
 import Image from 'next/image';
 import CareerTimeline from '@/components/CareerTimeline';
+import {
+  BenchmarkCatalog,
+  BenchmarkEvidence,
+} from '@/components/research/BenchmarkEvidence';
 import { researchTimelineItems, type ResearchTabId } from '@/data/research';
 import { AskAiButton } from '@/features/chat';
 
@@ -48,7 +52,39 @@ export default function ResearchPanels({ activeTab }: { activeTab: ResearchTabId
           </div>
         )}
 
-        {/* TAB 2: CPU & SIMD - CPU 아키텍처 및 SIMD 벡터 병렬 최적화 연구 분과 */}
+        {/* TAB 2: OPTIMIZATION OVERVIEW */}
+        {activeTab === 'optimization' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+            <section
+              id="research-optimization-overview"
+              tabIndex={-1}
+              style={{
+                padding: '28px',
+                background: 'var(--bg-elev)',
+                borderRadius: '20px',
+                border: '1px solid var(--border)',
+                boxShadow: 'var(--shadow)',
+                scrollMarginTop: '96px',
+              }}
+            >
+              <h3 style={{ fontSize: '1.35rem', fontWeight: 700, margin: '0 0 12px 0', color: 'var(--text)' }}>
+                성능 최적화 연구 개요
+              </h3>
+              <p style={{ margin: 0, fontSize: '1rem', lineHeight: 1.7, color: 'var(--text-dim)', wordBreak: 'keep-all' }}>
+                CPU 파이프라인과 SIMD 벡터화, 메모리 배치와 파일 입출력, 직렬화와 전송 크기까지
+                실행 계층별 병목을 분리해 측정하고 개선한 기록입니다. 공개 가능한 실험은 독립 실행 가능한
+                코드와 테스트, 벤치마크 러너로 재구성해 아래에 연결했습니다.
+              </p>
+              <div style={{ marginTop: '16px' }}>
+                <AskAiButton align="end" question="성능 최적화 연구를 CPU, 메모리·파일 I/O, 직렬화·전송 관점으로 나누어 설명해 주세요." />
+              </div>
+            </section>
+
+            <BenchmarkCatalog />
+          </div>
+        )}
+
+        {/* TAB 3: CPU & SIMD - CPU 아키텍처 및 SIMD 벡터 병렬 최적화 연구 분과 */}
         {activeTab === 'cpu' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
 
@@ -77,6 +113,7 @@ export default function ResearchPanels({ activeTab }: { activeTab: ResearchTabId
                   그리고 256비트 AVX2 SIMD 벡터 연산으로 각각 구현하여 성능 차이를 정밀 검증했습니다.
                 </p>
                 <AskAiButton align="end" question="「분기 예측 실패 제거와 SIMD 벡터화」 실험의 가설, 구현 방식과 측정 결과를 설명해 주세요." />
+                <BenchmarkEvidence projectId="simd-avx2" />
               </div>
 
               {/* Code comparison container */}
@@ -338,7 +375,7 @@ return Vector256.Sum(accumulator) + ScalarSum(src[남은_청크..]);`}
             </div>
 
             {/* 실험 2: 정렬 최적화 및 레지스터 효율성 연구 */}
-            <div style={{
+            <div id="research-counting-sort" tabIndex={-1} style={{
               padding: '28px',
               background: 'var(--bg-elev)',
               borderRadius: '20px',
@@ -361,6 +398,7 @@ return Vector256.Sum(accumulator) + ScalarSum(src[남은_청크..]);`}
                 포인터 연산(`unsafe`)과 루프 언롤링을 동원해 최적화하였습니다.
               </p>
               <AskAiButton align="end" question="「바이트 배열 정렬 및 레지스터 스필링」 연구에서 선택한 최적화와 검증 결과를 설명해 주세요." />
+              <BenchmarkEvidence projectId="counting-sort" />
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
                 <div style={{ background: 'var(--bg-elev-2)', borderRadius: '12px', padding: '16px', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -634,6 +672,7 @@ float[] vxs = new float[N];`}
                   게임 입력 프레임 기록(마우스 좌표 양자화, 버튼 비트, 스크롤 정규화) 데이터를 다양한 포맷으로 직렬화 및 압축하여 물리적 전송 크기를 최소화하는 구조를 연구했습니다.
                 </p>
                 <AskAiButton align="end" question="「프레임 기록 직렬화 크기 최적화」에서 비교한 포맷과 압축 결과를 설명해 주세요." />
+                <BenchmarkEvidence projectId="serialization-protobuf" />
               </div>
 
               {/* Serialization Table */}

@@ -8,8 +8,13 @@
  */
 import Link from 'next/link';
 import React from 'react';
-import { researchTabs } from '@/data/research';
-import type { ResearchTabId } from '@/data/research';
+import {
+  researchOptimizationTabs,
+  researchPrimaryTabFromTab,
+  researchPrimaryTabs,
+  researchTabs,
+  type ResearchTabId,
+} from '@/data/research';
 import ResearchPanels from '@/components/research/ResearchPanels';
 import ResearchTabs from '@/components/research/ResearchTabs';
 import { useResearchTabs } from '@/components/research/useResearchTabs';
@@ -23,7 +28,10 @@ const RESEARCH_ACTION_TARGET_TABS: Readonly<
   Record<string, ResearchTabId>
 > = {
   'research-timeline': 'overview',
+  'research-optimization-overview': 'optimization',
+  'research-benchmark-code': 'optimization',
   'research-cpu-simd': 'cpu',
+  'research-counting-sort': 'cpu',
   'research-memory-layout': 'memory',
   'research-serialization-packing': 'serialization',
   'research-tools-ai': 'meta',
@@ -124,6 +132,12 @@ export default function ResearchViewer() {
     }, RESEARCH_PANEL_EXIT_DURATION_MS);
   }, [activeTab, completePanelEntry, motion, pageTransition, selectTab]);
 
+  const selectResearchTabRef = React.useRef(selectResearchTab);
+
+  React.useEffect(() => {
+    selectResearchTabRef.current = selectResearchTab;
+  }, [selectResearchTab]);
+
   React.useEffect(() => {
     const selectHashTarget = () => {
       const requestedTab = researchTabFromHash(window.location.hash);
@@ -134,13 +148,27 @@ export default function ResearchViewer() {
         attractionTimerRef.current = 0;
         setActionTargetTab(null);
       }, RESEARCH_TAB_ATTRACTION_MS);
-      selectResearchTab(requestedTab);
+      selectResearchTabRef.current(requestedTab);
     };
 
     selectHashTarget();
     window.addEventListener('hashchange', selectHashTarget);
     return () => window.removeEventListener('hashchange', selectHashTarget);
-  }, [selectResearchTab]);
+  }, []);
+
+  const activePrimaryTab = researchPrimaryTabFromTab(activeTab);
+  const actionTargetPrimaryTab = actionTargetTab
+    ? researchPrimaryTabFromTab(actionTargetTab)
+    : null;
+  const isOptimizationSection = activePrimaryTab === 'optimization';
+
+  const selectPrimaryResearchTab = React.useCallback(
+    (targetTab: ResearchTabId) => {
+      if (targetTab === activePrimaryTab) return;
+      selectResearchTab(targetTab);
+    },
+    [activePrimaryTab, selectResearchTab],
+  );
 
   const panelClassName = [
     'research-panel-content',
@@ -159,31 +187,63 @@ export default function ResearchViewer() {
       style={{ display: 'flex', flexDirection: 'column', gap: '32px', scrollMarginTop: '96px' }}
     >
       <ResearchTabs
-        tabs={researchTabs}
-        activeTab={activeTab}
-        onSelect={selectResearchTab}
-        actionTargetTab={actionTargetTab}
+        tabs={researchPrimaryTabs}
+        activeTab={activePrimaryTab}
+        onSelect={selectPrimaryResearchTab}
+        actionTargetTab={actionTargetPrimaryTab}
+        ariaLabel="연구 대분류"
+        tabIdPrefix="research-primary-tab"
+        panelIdPrefix="research-section"
       />
 
-      <div className="research-panel-transition-viewport">
-        <div
-          key={activeTab}
-          id={`research-panel-${activeTab}`}
-          className={panelClassName}
-          role="tabpanel"
-          aria-labelledby={`research-tab-${activeTab}`}
-          data-page-transition={pageTransition}
-          data-page-direction={transitionDirection}
-          onAnimationEnd={(event) => {
-            if (
-              event.currentTarget === event.target &&
-              exitingTab !== activeTab
-            ) {
-              completePanelEntry();
+      <div
+        id={`research-section-${activePrimaryTab}`}
+        role="tabpanel"
+        aria-labelledby={`research-primary-tab-${activePrimaryTab}`}
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: isOptimizationSection ? '20px' : 0,
+          minWidth: 0,
+        }}
+      >
+        {isOptimizationSection && (
+          <ResearchTabs
+            tabs={researchOptimizationTabs}
+            activeTab={activeTab}
+            onSelect={selectResearchTab}
+            actionTargetTab={actionTargetTab}
+            ariaLabel="성능 최적화 세부 주제"
+            tabIdPrefix="research-optimization-tab"
+            panelIdPrefix="research-panel"
+            variant="secondary"
+          />
+        )}
+
+        <div className="research-panel-transition-viewport">
+          <div
+            key={activeTab}
+            id={`research-panel-${activeTab}`}
+            className={panelClassName}
+            role={isOptimizationSection ? 'tabpanel' : undefined}
+            aria-labelledby={
+              isOptimizationSection
+                ? `research-optimization-tab-${activeTab}`
+                : undefined
             }
-          }}
-        >
-          <ResearchPanels activeTab={activeTab} />
+            data-page-transition={pageTransition}
+            data-page-direction={transitionDirection}
+            onAnimationEnd={(event) => {
+              if (
+                event.currentTarget === event.target &&
+                exitingTab !== activeTab
+              ) {
+                completePanelEntry();
+              }
+            }}
+          >
+            <ResearchPanels activeTab={activeTab} />
+          </div>
         </div>
       </div>
 

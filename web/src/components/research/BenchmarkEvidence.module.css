@@ -1,0 +1,240 @@
+.evidence,
+.catalog {
+  border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--border));
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--accent) 7%, var(--bg-elev-2)),
+      var(--bg-elev-2) 54%
+    );
+  border-radius: 16px;
+}
+
+.evidence {
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+  margin-top: 18px;
+  padding: 17px;
+}
+
+.evidenceHeader,
+.catalogHeader,
+.catalogCardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.eyebrow {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--accent);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+}
+
+.title,
+.catalogTitle {
+  margin: 0;
+  color: var(--text);
+  line-height: 1.3;
+}
+
+.title {
+  font-size: 1rem;
+}
+
+.statusBadge,
+.catalogCardHeader span {
+  flex: 0 0 auto;
+  border: 1px solid color-mix(in srgb, var(--accent) 32%, var(--border));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 9%, var(--bg-elev));
+  color: var(--accent);
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 4px 9px;
+}
+
+.summary,
+.catalogIntro,
+.catalogCard p,
+.statusNote {
+  color: var(--text-dim);
+  line-height: 1.6;
+  word-break: keep-all;
+}
+
+.summary,
+.catalogCard p {
+  margin: 0;
+  font-size: 0.86rem;
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tags span {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg-elev);
+  color: var(--text-mute);
+  font-size: 0.7rem;
+  font-weight: 650;
+  padding: 4px 8px;
+}
+
+.links,
+.catalogCardLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.link,
+.internalLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 34px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-elev);
+  color: var(--text-dim);
+  font-size: 0.76rem;
+  font-weight: 700;
+  padding: 7px 10px;
+  text-decoration: none;
+  transition:
+    border-color 160ms ease,
+    color 160ms ease,
+    background-color 160ms ease,
+    transform 160ms ease;
+}
+
+.link:hover,
+.internalLink:hover {
+  border-color: color-mix(in srgb, var(--accent) 52%, var(--border));
+  color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.primaryLink {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+  background: color-mix(in srgb, var(--accent) 11%, var(--bg-elev));
+  color: var(--accent);
+}
+
+.statusNote {
+  margin: 0;
+  border-top: 1px solid var(--border);
+  padding-top: 11px;
+  font-size: 0.73rem;
+}
+
+.catalog {
+  padding: clamp(20px, 3vw, 28px);
+  scroll-margin-top: 96px;
+}
+
+.catalogTitle {
+  font-size: 1.35rem;
+}
+
+.catalogIntro {
+  max-width: 760px;
+  margin: 12px 0 20px;
+  font-size: 0.94rem;
+}
+
+.catalogGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+  gap: 12px;
+}
+
+.catalogCard {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--bg-elev);
+  padding: 16px;
+}
+
+.catalogCardHeader h4 {
+  margin: 0;
+  color: var(--text);
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+.catalogCardLinks {
+  margin-top: auto;
+  padding-top: 2px;
+}
+
+.notice {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+  border-top: 1px solid var(--border);
+  padding-top: 16px;
+  color: var(--text-mute);
+  font-size: 0.76rem;
+  line-height: 1.55;
+}
+
+.notice strong {
+  color: var(--text);
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .evidenceHeader,
+  .catalogHeader,
+  .catalogCardHeader {
+    align-items: flex-start;
+  }
+
+  .catalogHeader {
+    flex-direction: column;
+  }
+
+  .notice {
+    grid-template-columns: 1fr;
+  }
+
+  .notice strong {
+    white-space: normal;
+  }
+
+  .links > *,
+  .catalogCardLinks > * {
+    flex: 1 1 132px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .link,
+  .internalLink {
+    transition: none;
+  }
+
+  .link:hover,
+  .internalLink:hover {
+    transform: none;
+  }
+}

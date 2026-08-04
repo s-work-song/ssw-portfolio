@@ -5,7 +5,15 @@
  */
 import type { CareerItem } from '@/types/career';
 
-export type ResearchTabId = 'overview' | 'cpu' | 'memory' | 'serialization' | 'meta';
+export type ResearchTabId =
+  | 'overview'
+  | 'optimization'
+  | 'cpu'
+  | 'memory'
+  | 'serialization'
+  | 'meta';
+
+export type ResearchPrimaryTabId = 'overview' | 'optimization' | 'meta';
 
 export interface ResearchTab {
   id: ResearchTabId;
@@ -13,13 +21,31 @@ export interface ResearchTab {
   emoji: string;
 }
 
-export const researchTabs: ResearchTab[] = [
+export const researchPrimaryTabs: readonly ResearchTab[] = [
   { id: 'overview', label: '연구 여정 (Timeline)', emoji: '⏱️' },
-  { id: 'cpu', label: 'CPU & SIMD 최적화', emoji: '🔬' },
-  { id: 'memory', label: '메모리 & 파일 I/O', emoji: '💾' },
-  { id: 'serialization', label: '직렬화 & 전송', emoji: '📡' },
+  { id: 'optimization', label: '성능 최적화', emoji: '⚡' },
   { id: 'meta', label: '도구 & AI 접목', emoji: '🛠️' },
 ];
+
+export const researchOptimizationTabs: readonly ResearchTab[] = [
+  { id: 'optimization', label: '최적화 개요', emoji: '📊' },
+  { id: 'cpu', label: 'CPU & SIMD', emoji: '🔬' },
+  { id: 'memory', label: '메모리 & 파일 I/O', emoji: '💾' },
+  { id: 'serialization', label: '직렬화 & 전송', emoji: '📡' },
+];
+
+export const researchTabs: readonly ResearchTab[] = [
+  researchPrimaryTabs[0],
+  ...researchOptimizationTabs,
+  researchPrimaryTabs[2],
+];
+
+export function researchPrimaryTabFromTab(
+  tabId: ResearchTabId,
+): ResearchPrimaryTabId {
+  if (tabId === 'overview' || tabId === 'meta') return tabId;
+  return 'optimization';
+}
 
 export const researchTimelineItems: CareerItem[] = [
   {

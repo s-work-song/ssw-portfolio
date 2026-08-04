@@ -48,6 +48,8 @@ export interface ChatContextValue {
   ) => Promise<void>;
   stopGenerating: () => void;
   retry: () => Promise<void>;
+  /** 포트폴리오 내부의 탭·세부 앵커 이동 연출을 공통으로 실행한다. */
+  navigateRoute: (route: string) => void;
   navigateAction: (id: ActionId) => void;
 }
 
