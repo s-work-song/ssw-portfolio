@@ -156,6 +156,44 @@ export default function OverviewPage() {
               <span style={{ color: 'var(--text-mute)', fontSize: '0.82rem' }}>
                 {project.status}
               </span>
+              {project.links && project.links.length > 0 && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '2px' }}>
+                  {project.links.map((link) => {
+                    const isDemo = link.kind === 'demo';
+                    return (
+                      <a
+                        key={link.href}
+                        href={link.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label={`${project.title} ${link.label} 새 탭에서 열기`}
+                        className={isDemo ? 'hover-btn-primary' : 'hover-btn-secondary'}
+                        style={{
+                          minHeight: '36px',
+                          padding: '7px 11px',
+                          border: isDemo
+                            ? '1px solid var(--accent, #6366f1)'
+                            : '1px solid var(--border-strong)',
+                          borderRadius: '9px',
+                          background: isDemo
+                            ? 'var(--accent, #6366f1)'
+                            : 'var(--bg-elev)',
+                          color: isDemo ? '#fff' : 'var(--text-dim)',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          fontSize: '0.78rem',
+                          fontWeight: 700,
+                          textDecoration: 'none',
+                        }}
+                      >
+                        {link.label}
+                        <span aria-hidden="true">↗</span>
+                      </a>
+                    );
+                  })}
+                </div>
+              )}
             </article>
           ))}
         </div>

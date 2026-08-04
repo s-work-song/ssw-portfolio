@@ -65,6 +65,13 @@ body {
   }
 }
 
+/* 넓은 화면의 플로팅 채팅은 본문을 완전히 덮지 않도록 중심을 살짝 왼쪽으로 옮깁니다. */
+@media (min-width: 1200px) {
+  :root[data-chat-floating-open="true"] body {
+    padding-right: clamp(200px, 18vw, 260px);
+  }
+}
+
 /* 모바일 FAB 하단 클리어런스: 마지막 콘텐츠가 고정 버튼 위까지 스크롤되게 합니다. */
 @media (max-width: 600px) {
   body {

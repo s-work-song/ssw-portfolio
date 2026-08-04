@@ -337,15 +337,25 @@ export function ChatWidget() {
   );
 
   useEffect(() => {
-    if (isDocked && isOpen) {
-      document.documentElement.dataset.chatDockOpen = "true";
+    const root = document.documentElement;
+
+    if (isDocked && isOpen && !isClosing) {
+      root.dataset.chatDockOpen = "true";
     } else {
-      delete document.documentElement.dataset.chatDockOpen;
+      delete root.dataset.chatDockOpen;
     }
+
+    if (!isDocked && isWideDesktop && isOpen && !isClosing) {
+      root.dataset.chatFloatingOpen = "true";
+    } else {
+      delete root.dataset.chatFloatingOpen;
+    }
+
     return () => {
-      delete document.documentElement.dataset.chatDockOpen;
+      delete root.dataset.chatDockOpen;
+      delete root.dataset.chatFloatingOpen;
     };
-  }, [isDocked, isOpen]);
+  }, [isClosing, isDocked, isOpen, isWideDesktop]);
 
   const clearQuickMenuCloseTimer = useCallback(() => {
     window.clearTimeout(quickMenuCloseTimerRef.current);

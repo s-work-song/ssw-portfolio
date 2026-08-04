@@ -18,6 +18,13 @@ export interface AboutProject {
   category: string;
   desc: string;
   status: string;
+  links?: AboutProjectLink[];
+}
+
+export interface AboutProjectLink {
+  label: string;
+  href: string;
+  kind: 'repository' | 'demo';
 }
 
 export const aboutDestinations: AboutDestination[] = [
@@ -57,14 +64,38 @@ export const aboutProjects: AboutProject[] = [
     title: '공용 인프라 프로젝트군',
     category: 'Shared Infrastructure',
     desc: '인증·채팅·파일·미디어·알림·분석과 게이트웨이·설정·스케줄링·관측 기능을 여러 프로젝트에서 재사용할 수 있도록 분리한 프로젝트군입니다.',
-    status: '구조 및 설명 문서 준비 중',
+    status: '공개 저장소 운영 중',
+    links: [
+      {
+        label: 'GitHub 저장소',
+        href: 'https://github.com/s-work-agency/ssw-infra-public',
+        kind: 'repository',
+      },
+    ],
   },
   {
     id: 'project-ecommerce-demo',
     title: '이커머스 데모',
     category: 'Commerce Demo',
     desc: '상품 조회, 장바구니, 주문과 관리자 흐름을 갖춘 데모입니다. 실제 결제는 포함하지 않으며 배너와 상품 이미지는 AI 도구로 제작했습니다.',
-    status: '공개용 사이트 준비 중',
+    status: '공개 데모 운영 중',
+    links: [
+      {
+        label: 'GitHub 저장소',
+        href: 'https://github.com/s-work-agency/ssw-e-commerce-demo-public',
+        kind: 'repository',
+      },
+      {
+        label: '사용자 데모',
+        href: 'https://demo.ecommerce.sworkagency.com/',
+        kind: 'demo',
+      },
+      {
+        label: '관리자 데모',
+        href: 'https://admin-ecommerce.sworkagency.com/',
+        kind: 'demo',
+      },
+    ],
   },
   {
     id: 'project-game-collection-platform',

@@ -66,9 +66,10 @@ const MOBILE_EXIT_DURATION_MS = 260;
 const CHAT_STATUS_TIMEOUT_MS = 5_000;
 const STREAM_RENDER_CHUNK_CHARACTERS = 8;
 const STREAM_RENDER_INTERVAL_MS = 48;
-const ACTION_TOP_SCROLL_TIMEOUT_MS = 900;
+const ACTION_SCROLL_MIN_DURATION_MS = 420;
+const ACTION_SCROLL_MAX_DURATION_MS = 900;
+const ACTION_SCROLL_MS_PER_PIXEL = 0.45;
 const ACTION_TARGET_WAIT_TIMEOUT_MS = 3_000;
-const ACTION_TARGET_SCROLL_TIMEOUT_MS = 1_800;
 const ACTION_PAGE_ENTRY_FALLBACK_MS = 720;
 
 /**
@@ -104,6 +105,22 @@ function waitForStreamRenderInterval(): Promise<void> {
   return new Promise((resolve) => {
     window.setTimeout(resolve, STREAM_RENDER_INTERVAL_MS);
   });
+}
+
+function easeInOutCubic(progress: number): number {
+  return progress < 0.5
+    ? 4 * progress * progress * progress
+    : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+}
+
+function scrollDurationForDistance(distance: number): number {
+  return Math.min(
+    ACTION_SCROLL_MAX_DURATION_MS,
+    Math.max(
+      ACTION_SCROLL_MIN_DURATION_MS,
+      Math.abs(distance) * ACTION_SCROLL_MS_PER_PIXEL,
+    ),
+  );
 }
 
 function initialMessages(): ChatMessage[] {
@@ -378,6 +395,56 @@ export function ChatProvider({ children }: Readonly<{ children: ReactNode }>) {
   const motionSuppressed =
     motion === "off" || (motion === "system" && systemReducedMotion);
 
+  /**
+   * 라우트와 해시가 함께 바뀌는 채팅 액션에서는 브라우저의 native smooth
+   * scroll이 중간 프레임을 생략하기도 한다. 문서 스크롤을 직접 보간해
+   * 이동 거리에 관계없이 출발과 도착을 눈으로 따라갈 수 있게 한다.
+   */
+  const animateDocumentScroll = useCallback(
+    (
+      requestedTop: number,
+      setFrame: (frame: number | null) => void,
+      onComplete: () => void,
+    ) => {
+      const scroller = document.scrollingElement;
+      if (!scroller) {
+        setFrame(null);
+        onComplete();
+        return;
+      }
+
+      const startTop = scroller.scrollTop;
+      const maximumTop = Math.max(0, scroller.scrollHeight - window.innerHeight);
+      const targetTop = Math.min(maximumTop, Math.max(0, requestedTop));
+      const distance = targetTop - startTop;
+
+      if (motionSuppressed || Math.abs(distance) <= 1) {
+        scroller.scrollTop = targetTop;
+        setFrame(null);
+        onComplete();
+        return;
+      }
+
+      const duration = scrollDurationForDistance(distance);
+      const startedAt = window.performance.now();
+      const step = (timestamp: number) => {
+        const progress = Math.min(1, (timestamp - startedAt) / duration);
+        scroller.scrollTop = startTop + distance * easeInOutCubic(progress);
+
+        if (progress >= 1) {
+          scroller.scrollTop = targetTop;
+          setFrame(null);
+          onComplete();
+          return;
+        }
+        setFrame(window.requestAnimationFrame(step));
+      };
+
+      setFrame(window.requestAnimationFrame(step));
+    },
+    [motionSuppressed],
+  );
+
   /** 패널 연출. 모바일 구간은 기존 동작을 유지하므로 이 값을 보지 않는다. */
   const effectiveChatAnimation = useMemo<ChatAnimation>(
     () => (motionSuppressed ? "none" : chatAnimation),
@@ -442,55 +509,6 @@ export function ChatProvider({ children }: Readonly<{ children: ReactNode }>) {
       }, 1_200);
     };
 
-    const waitForScrollArrival = (target: HTMLElement) => {
-      if (motionSuppressed) {
-        completeTargetArrival(target);
-        return;
-      }
-
-      const scrollStartedAt = window.performance.now();
-      let lastScrollTop =
-        document.scrollingElement?.scrollTop ?? window.scrollY;
-      let settledFrames = 0;
-      const wait = () => {
-        if (pendingActionAnchorRef.current !== anchor) return;
-        const scrollTop =
-          document.scrollingElement?.scrollTop ?? window.scrollY;
-        settledFrames =
-          Math.abs(scrollTop - lastScrollTop) <= 0.5
-            ? settledFrames + 1
-            : 0;
-        lastScrollTop = scrollTop;
-
-        const rect = target.getBoundingClientRect();
-        const scrollMarginTop =
-          Number.parseFloat(window.getComputedStyle(target).scrollMarginTop) ||
-          0;
-        const scroller = document.scrollingElement;
-        const atBottom = scroller
-          ? scrollTop + window.innerHeight >= scroller.scrollHeight - 2
-          : false;
-        const visiblySettled =
-          settledFrames >= 4 &&
-          rect.bottom > 0 &&
-          rect.top < Math.max(320, window.innerHeight * 0.65);
-        const targetReached =
-          Math.abs(rect.top - scrollMarginTop) <= 3 ||
-          (atBottom && rect.top >= 0 && rect.top < window.innerHeight) ||
-          visiblySettled;
-        const timedOut =
-          window.performance.now() - scrollStartedAt >=
-          ACTION_TARGET_SCROLL_TIMEOUT_MS;
-
-        if ((targetReached && settledFrames >= 2) || timedOut) {
-          completeTargetArrival(target);
-          return;
-        }
-        actionScrollFrameRef.current = window.requestAnimationFrame(wait);
-      };
-      actionScrollFrameRef.current = window.requestAnimationFrame(wait);
-    };
-
     const scroll = () => {
       if (pendingActionAnchorRef.current !== anchor) return;
       const target = document.getElementById(anchor);
@@ -536,16 +554,35 @@ export function ChatProvider({ children }: Readonly<{ children: ReactNode }>) {
       }
 
       actionScrollTimerRef.current = null;
-      target.scrollIntoView({
-        behavior: motionSuppressed ? "auto" : "smooth",
-        block: "start",
-      });
-      waitForScrollArrival(target);
+      const scroller = document.scrollingElement;
+      const scrollTop = scroller?.scrollTop ?? window.scrollY;
+      const targetStyle = window.getComputedStyle(target);
+      const rootStyle = window.getComputedStyle(document.documentElement);
+      const scrollMarginTop =
+        Number.parseFloat(targetStyle.scrollMarginTop) || 0;
+      const scrollPaddingTop =
+        Number.parseFloat(rootStyle.scrollPaddingTop) || 0;
+      const targetTop =
+        scrollTop +
+        target.getBoundingClientRect().top -
+        scrollMarginTop -
+        scrollPaddingTop;
+      animateDocumentScroll(
+        targetTop,
+        (frame) => {
+          actionScrollFrameRef.current = frame;
+        },
+        () => {
+          if (pendingActionAnchorRef.current === anchor) {
+            completeTargetArrival(target);
+          }
+        },
+      );
     };
     actionScrollFrameRef.current = window.requestAnimationFrame(() => {
       actionScrollFrameRef.current = window.requestAnimationFrame(scroll);
     });
-  }, [motionSuppressed]);
+  }, [animateDocumentScroll, motionSuppressed]);
 
   const navigateToActionTarget = useCallback(
     (route: string) => {
@@ -613,30 +650,20 @@ export function ChatProvider({ children }: Readonly<{ children: ReactNode }>) {
         return;
       }
 
-      const startedAt = window.performance.now();
-      let settledFrames = 0;
-      window.scrollTo({ top: 0, behavior: "smooth" });
-
-      const waitForTop = () => {
-        if (actionNavigationTokenRef.current !== navigationToken) return;
-        const scrollTop =
-          document.scrollingElement?.scrollTop ?? window.scrollY;
-        settledFrames = scrollTop <= 2 ? settledFrames + 1 : 0;
-        if (
-          settledFrames >= 2 ||
-          window.performance.now() - startedAt >= ACTION_TOP_SCROLL_TIMEOUT_MS
-        ) {
-          actionTopScrollFrameRef.current = null;
-          dispatchNavigation();
-          return;
-        }
-        actionTopScrollFrameRef.current =
-          window.requestAnimationFrame(waitForTop);
-      };
-      actionTopScrollFrameRef.current =
-        window.requestAnimationFrame(waitForTop);
+      animateDocumentScroll(
+        0,
+        (frame) => {
+          actionTopScrollFrameRef.current = frame;
+        },
+        () => {
+          if (actionNavigationTokenRef.current === navigationToken) {
+            dispatchNavigation();
+          }
+        },
+      );
     },
     [
+      animateDocumentScroll,
       motionSuppressed,
       pageTransition,
       pathname,
