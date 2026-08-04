@@ -4,7 +4,6 @@ import Link from 'next/link';
 import type { MouseEvent, ReactNode } from 'react';
 import { useChat } from '@/features/chat';
 import {
-  BENCHMARK_NOTICE_URL,
   BENCHMARK_PROJECTS,
   BENCHMARK_PROJECT_BY_ID,
   BENCHMARK_ROOT_URL,
@@ -165,23 +164,10 @@ export function BenchmarkCatalog() {
                 <ResearchLink href={project.researchHref}>
                   {project.researchLabel ?? '연구 내용 보기'}
                 </ResearchLink>
-              ) : (
-                <ExternalLink href={benchmarkReadmeUrl(project)}>
-                  설명 보기
-                </ExternalLink>
-              )}
+              ) : null}
             </div>
           </article>
         ))}
-      </div>
-
-      <div className={styles.notice}>
-        <strong>열람용 공개 코드</strong>
-        <span>
-          별도 라이선스를 부여하지 않으며 복제·수정·재배포·상업적 사용을
-          허가하지 않습니다.
-        </span>
-        <ExternalLink href={BENCHMARK_NOTICE_URL}>이용 고지</ExternalLink>
       </div>
     </section>
   );

@@ -184,24 +184,6 @@
   padding-top: 2px;
 }
 
-.notice {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 12px;
-  margin-top: 16px;
-  border-top: 1px solid var(--border);
-  padding-top: 16px;
-  color: var(--text-mute);
-  font-size: 0.76rem;
-  line-height: 1.55;
-}
-
-.notice strong {
-  color: var(--text);
-  white-space: nowrap;
-}
-
 @media (max-width: 640px) {
   .evidenceHeader,
   .catalogHeader,
@@ -211,14 +193,6 @@
 
   .catalogHeader {
     flex-direction: column;
-  }
-
-  .notice {
-    grid-template-columns: 1fr;
-  }
-
-  .notice strong {
-    white-space: normal;
   }
 
   .links > *,

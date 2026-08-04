@@ -58,6 +58,7 @@ export type ActionId =
   | "project_game_collection"
   | "project_code_archive"
   | "research_timeline"
+  | "research_optimization"
   | "research_cpu"
   | "research_memory"
   | "research_serialization"

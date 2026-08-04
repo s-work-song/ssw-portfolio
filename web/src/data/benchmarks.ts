@@ -27,7 +27,6 @@ export interface BenchmarkProject {
 const GITHUB_REPOSITORY =
   'https://github.com/s-work-song/ssw-portfolio-public';
 
-export const BENCHMARK_NOTICE_URL = `${GITHUB_REPOSITORY}/blob/main/benchmarks/NOTICE.md`;
 export const BENCHMARK_ROOT_URL = `${GITHUB_REPOSITORY}/tree/main/benchmarks`;
 
 export const BENCHMARK_PROJECTS: readonly BenchmarkProject[] = [
