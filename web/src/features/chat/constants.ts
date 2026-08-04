@@ -148,17 +148,49 @@ export const ACTION_ROUTES: Readonly<Record<ActionId, string>> = {
   resume: "/about-me/resume#resume-experience-skills",
   cover_letter: "/about-me/cover-letter#cover-letter-story",
   research: "/about-me/research#research-experiments",
-  log: "/about-me/log#log-entries",
+  log: "/about-me/log#log-entries-heading",
   project_overview: "/about-me#featured-projects",
   project_common_infrastructure: "/about-me#project-common-infrastructure",
   project_ecommerce_demo: "/about-me#project-ecommerce-demo",
   project_game_collection: "/about-me#project-game-collection-platform",
   project_code_archive: "/about-me#project-code-archive",
-  research_timeline: "/about-me/research#research-panel-overview",
-  research_cpu: "/about-me/research#research-panel-cpu",
-  research_memory: "/about-me/research#research-panel-memory",
-  research_serialization: "/about-me/research#research-panel-serialization",
-  research_tools: "/about-me/research#research-panel-meta",
+  research_timeline: "/about-me/research#research-timeline",
+  research_cpu: "/about-me/research#research-cpu-simd",
+  research_memory: "/about-me/research#research-memory-layout",
+  research_serialization: "/about-me/research#research-serialization-packing",
+  research_tools: "/about-me/research#research-tools-ai",
+  log_ai_implementation_options:
+    "/about-me/log#log-card-ask-ai-for-options-before-implementation",
+  log_human_hallucination:
+    "/about-me/log#log-card-consider-human-hallucination-before-ai-hallucination",
+  log_gray_area_responsibility:
+    "/about-me/log#log-card-developer-responsibility-does-not-disappear-in-gray-areas",
+  log_ai_bubble_reality:
+    "/about-me/log#log-card-distinguishing-ai-bubble-from-reality-is-your-responsibility",
+  log_restful_rpc:
+    "/about-me/log#log-card-do-not-call-restful-and-rpc-the-same",
+  log_employment_contract:
+    "/about-me/log#log-card-employment-contract-that-damaged-trust-from-the-start",
+  log_health_long_term_asset:
+    "/about-me/log#log-card-health-as-the-most-important-long-term-asset",
+  log_hobby_interview:
+    "/about-me/log#log-card-interview-where-i-had-to-prove-my-hobby",
+  log_license:
+    "/about-me/log#log-card-license-is-not-something-to-negotiate-after-success",
+  log_manual_security:
+    "/about-me/log#log-card-manual-work-is-not-safe-just-because-ai-has-security-risks",
+  log_mutual_respect:
+    "/about-me/log#log-card-mutual-respect-creates-a-virtuous-cycle-of-knowledge",
+  log_radial_nerve:
+    "/about-me/log#log-card-radial-nerve-palsy-and-ai-workflow",
+  log_sleep_recovery:
+    "/about-me/log#log-card-recovery-after-alternate-all-nighters",
+  log_rules_collaboration:
+    "/about-me/log#log-card-rules-need-both-compliance-and-enforceable-structure",
+  log_business_integrity:
+    "/about-me/log#log-card-scale-and-appearance-do-not-guarantee-business-integrity",
+  log_hardware_to_software:
+    "/about-me/log#log-card-why-i-started-software-development",
 };
 
 export const ACTION_LABELS: Readonly<Record<ActionId, string>> = {
@@ -177,6 +209,22 @@ export const ACTION_LABELS: Readonly<Record<ActionId, string>> = {
   research_memory: "메모리·파일 I/O 연구 보기",
   research_serialization: "직렬화·전송 연구 보기",
   research_tools: "도구·AI 연구 보기",
+  log_ai_implementation_options: "AI 구현 선택지 기록 보기",
+  log_human_hallucination: "사람의 환각 기록 보기",
+  log_gray_area_responsibility: "회색지대 책임 기록 보기",
+  log_ai_bubble_reality: "AI 거품과 실체 기록 보기",
+  log_restful_rpc: "RESTful·RPC 기록 보기",
+  log_employment_contract: "근로계약 신뢰 기록 보기",
+  log_health_long_term_asset: "건강 장기 자산 기록 보기",
+  log_hobby_interview: "취미 면접 기록 보기",
+  log_license: "라이선스 기록 보기",
+  log_manual_security: "AI·수작업 보안 기록 보기",
+  log_mutual_respect: "지식 선순환 기록 보기",
+  log_radial_nerve: "요골신경 마비 회고 보기",
+  log_sleep_recovery: "격일 밤샘 회복 기록 보기",
+  log_rules_collaboration: "규칙과 협업 기록 보기",
+  log_business_integrity: "사업 건전성 기록 보기",
+  log_hardware_to_software: "하드웨어 관심에서 소프트웨어 개발로 보기",
 };
 
 export const ACTION_IDS: readonly ActionId[] = [
@@ -195,6 +243,22 @@ export const ACTION_IDS: readonly ActionId[] = [
   "research_memory",
   "research_serialization",
   "research_tools",
+  "log_ai_implementation_options",
+  "log_human_hallucination",
+  "log_gray_area_responsibility",
+  "log_ai_bubble_reality",
+  "log_restful_rpc",
+  "log_employment_contract",
+  "log_health_long_term_asset",
+  "log_hobby_interview",
+  "log_license",
+  "log_manual_security",
+  "log_mutual_respect",
+  "log_radial_nerve",
+  "log_sleep_recovery",
+  "log_rules_collaboration",
+  "log_business_integrity",
+  "log_hardware_to_software",
 ];
 
 export function audienceToApi(choice: AudienceChoice | null): ApiAudience {

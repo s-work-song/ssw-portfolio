@@ -492,6 +492,22 @@ input, select, textarea, button {
     both;
 }
 
+[data-chat-action-research-tab-target="true"] {
+  color: var(--accent) !important;
+  border-color: color-mix(in srgb, var(--accent) 58%, var(--border)) !important;
+  background: color-mix(in srgb, var(--accent) 10%, var(--bg-elev)) !important;
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 12%, transparent);
+  animation: chat-action-tab-attraction 240ms cubic-bezier(0.22, 1, 0.36, 1)
+    both;
+}
+
+#research-cpu-simd,
+#research-memory-layout,
+#research-serialization-packing,
+#research-tools-ai {
+  scroll-margin-top: 96px;
+}
+
 @keyframes chat-action-tab-attraction {
   0% {
     transform: translateY(0) scale(1);
@@ -954,6 +970,13 @@ code {
   pointer-events: none;
 }
 
+/* 페이드 전환은 콘텐츠를 완전히 지우지 않고 같은 투명도에서 교체한다.
+   완전 투명 상태를 사이에 두면 라우트·패널 커밋 시 배경이 한 번 번쩍인다. */
+.about-page-content-exiting[data-page-transition="fade"],
+.research-panel-content-exiting[data-page-transition="fade"] {
+  animation: about-page-fade-exit 150ms ease-in both !important;
+}
+
 @keyframes about-page-slide {
   from {
     opacity: 0.15;
@@ -976,10 +999,19 @@ code {
 
 @keyframes about-page-fade {
   from {
-    opacity: 0;
+    opacity: 0.32;
   }
   to {
     opacity: 1;
+  }
+}
+
+@keyframes about-page-fade-exit {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0.32;
   }
 }
 
@@ -996,7 +1028,8 @@ code {
 
 [data-chat-action-target="true"] {
   outline: 3px solid transparent;
-  outline-offset: 7px;
+  outline-offset: -3px;
+  border-radius: inherit;
   animation: chat-action-target-highlight 1.2s ease-out;
 }
 

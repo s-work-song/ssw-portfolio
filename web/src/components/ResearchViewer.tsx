@@ -17,6 +17,28 @@ import { useTheme } from '@/context/ThemeContext';
 
 const RESEARCH_PANEL_EXIT_DURATION_MS = 150;
 const RESEARCH_PANEL_ENTRY_FALLBACK_MS = 600;
+const RESEARCH_TAB_ATTRACTION_MS = 520;
+
+const RESEARCH_ACTION_TARGET_TABS: Readonly<
+  Record<string, ResearchTabId>
+> = {
+  'research-timeline': 'overview',
+  'research-cpu-simd': 'cpu',
+  'research-memory-layout': 'memory',
+  'research-serialization-packing': 'serialization',
+  'research-tools-ai': 'meta',
+};
+
+function researchTabFromHash(hash: string): ResearchTabId | null {
+  const anchor = decodeURIComponent(hash.replace(/^#/u, ''));
+  if (RESEARCH_ACTION_TARGET_TABS[anchor]) {
+    return RESEARCH_ACTION_TARGET_TABS[anchor];
+  }
+  const prefix = 'research-panel-';
+  if (!anchor.startsWith(prefix)) return null;
+  const requestedId = anchor.slice(prefix.length);
+  return researchTabs.find(({ id }) => id === requestedId)?.id ?? null;
+}
 
 export default function ResearchViewer() {
   const { activeTab, selectTab } = useResearchTabs();
@@ -30,13 +52,17 @@ export default function ResearchViewer() {
   const [animatedTab, setAnimatedTab] = React.useState<ResearchTabId | null>(
     null,
   );
+  const [actionTargetTab, setActionTargetTab] =
+    React.useState<ResearchTabId | null>(null);
   const transitionTimerRef = React.useRef(0);
   const entryTimerRef = React.useRef(0);
+  const attractionTimerRef = React.useRef(0);
 
   React.useEffect(
     () => () => {
       window.clearTimeout(transitionTimerRef.current);
       window.clearTimeout(entryTimerRef.current);
+      window.clearTimeout(attractionTimerRef.current);
     },
     [],
   );
@@ -44,6 +70,7 @@ export default function ResearchViewer() {
   const completePanelEntry = React.useCallback(() => {
     window.clearTimeout(entryTimerRef.current);
     entryTimerRef.current = 0;
+    setExitingTab(null);
     setAnimatedTab(null);
   }, []);
 
@@ -51,7 +78,12 @@ export default function ResearchViewer() {
     if (targetTab === activeTab) return;
 
     const targetHash = `#research-panel-${targetTab}`;
-    if (window.location.hash !== targetHash) {
+    // 채팅 액션의 세부 앵커는 해당 탭을 고르는 정보까지 포함한다. 이 경우
+    // panel 해시로 덮어쓰지 않아야 최종 카드 위치와 새로고침 주소가 보존된다.
+    if (
+      window.location.hash !== targetHash &&
+      researchTabFromHash(window.location.hash) !== targetTab
+    ) {
       const targetUrl = new URL(window.location.href);
       targetUrl.hash = targetHash;
       window.history.replaceState(
@@ -83,7 +115,6 @@ export default function ResearchViewer() {
     transitionTimerRef.current = window.setTimeout(() => {
       setAnimatedTab(targetTab);
       selectTab(targetTab);
-      setExitingTab(null);
       transitionTimerRef.current = 0;
       window.clearTimeout(entryTimerRef.current);
       entryTimerRef.current = window.setTimeout(
@@ -95,11 +126,15 @@ export default function ResearchViewer() {
 
   React.useEffect(() => {
     const selectHashTarget = () => {
-      const prefix = '#research-panel-';
-      if (!window.location.hash.startsWith(prefix)) return;
-      const requestedId = window.location.hash.slice(prefix.length);
-      const requestedTab = researchTabs.find(({ id }) => id === requestedId);
-      if (requestedTab) selectResearchTab(requestedTab.id);
+      const requestedTab = researchTabFromHash(window.location.hash);
+      if (!requestedTab) return;
+      window.clearTimeout(attractionTimerRef.current);
+      setActionTargetTab(requestedTab);
+      attractionTimerRef.current = window.setTimeout(() => {
+        attractionTimerRef.current = 0;
+        setActionTargetTab(null);
+      }, RESEARCH_TAB_ATTRACTION_MS);
+      selectResearchTab(requestedTab);
     };
 
     selectHashTarget();
@@ -127,6 +162,7 @@ export default function ResearchViewer() {
         tabs={researchTabs}
         activeTab={activeTab}
         onSelect={selectResearchTab}
+        actionTargetTab={actionTargetTab}
       />
 
       <div className="research-panel-transition-viewport">
@@ -139,7 +175,10 @@ export default function ResearchViewer() {
           data-page-transition={pageTransition}
           data-page-direction={transitionDirection}
           onAnimationEnd={(event) => {
-            if (event.currentTarget === event.target && exitingTab === null) {
+            if (
+              event.currentTarget === event.target &&
+              exitingTab !== activeTab
+            ) {
               completePanelEntry();
             }
           }}

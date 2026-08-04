@@ -38,7 +38,11 @@ export default function ResearchPanels({ activeTab }: { activeTab: ResearchTabId
               </div>
             </section>
 
-            <section style={{ width: '100%' }}>
+            <section
+              id="research-timeline"
+              tabIndex={-1}
+              style={{ width: '100%', scrollMarginTop: '96px' }}
+            >
               <CareerTimeline items={researchTimelineItems} />
             </section>
           </div>
@@ -49,7 +53,7 @@ export default function ResearchPanels({ activeTab }: { activeTab: ResearchTabId
           <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
 
             {/* 실험 1: 분기 예측(Branch Prediction) 및 SIMD 최적화 사례 연구 */}
-            <div style={{
+            <div id="research-cpu-simd" tabIndex={-1} style={{
               padding: '28px',
               background: 'var(--bg-elev)',
               borderRadius: '20px',
@@ -409,7 +413,7 @@ while (current < end) {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
 
             {/* 실험 1: 데이터 지향 설계(DoD) - AoS vs SoA 캐시 라인 분석 */}
-            <div style={{
+            <div id="research-memory-layout" tabIndex={-1} style={{
               padding: '28px',
               background: 'var(--bg-elev)',
               borderRadius: '20px',
@@ -607,7 +611,7 @@ float[] vxs = new float[N];`}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
 
             {/* 실험 1: 프레임 직렬화 형식별 데이터 크기 비교 */}
-            <div style={{
+            <div id="research-serialization-packing" tabIndex={-1} style={{
               padding: '28px',
               background: 'var(--bg-elev)',
               borderRadius: '20px',
@@ -889,7 +893,7 @@ ulong restored = Bmi2.X64.ParallelBitDeposit(bits, mask);`}
             </div>
 
             {/* AI agentic workflows */}
-            <div style={{
+            <div id="research-tools-ai" tabIndex={-1} style={{
               padding: '28px',
               background: 'var(--bg-elev)',
               borderRadius: '20px',

@@ -68,6 +68,7 @@ const STREAM_RENDER_CHUNK_CHARACTERS = 8;
 const STREAM_RENDER_INTERVAL_MS = 48;
 const ACTION_TOP_SCROLL_TIMEOUT_MS = 900;
 const ACTION_TARGET_WAIT_TIMEOUT_MS = 3_000;
+const ACTION_TARGET_SCROLL_TIMEOUT_MS = 1_800;
 const ACTION_PAGE_ENTRY_FALLBACK_MS = 720;
 
 /**
@@ -399,7 +400,97 @@ export function ChatProvider({ children }: Readonly<{ children: ReactNode }>) {
       window.clearTimeout(actionScrollTimerRef.current);
     }
 
+    const targetHash = `#${encodeURIComponent(anchor)}`;
+    if (window.location.hash !== targetHash) {
+      const oldUrl = window.location.href;
+      const targetUrl = new URL(oldUrl);
+      targetUrl.hash = targetHash;
+      const nextUrl = `${targetUrl.pathname}${targetUrl.search}${targetUrl.hash}`;
+      window.history.pushState(window.history.state, "", nextUrl);
+      window.dispatchEvent(
+        new HashChangeEvent("hashchange", {
+          oldURL: oldUrl,
+          newURL: targetUrl.href,
+        }),
+      );
+    }
+
     const startedAt = window.performance.now();
+    const completeTargetArrival = (target: HTMLElement) => {
+      pendingActionAnchorRef.current = null;
+      pendingActionPathRef.current = null;
+      activeActionNavigationRouteRef.current = null;
+      actionScrollFrameRef.current = null;
+      actionScrollTimerRef.current = null;
+      target.focus({ preventScroll: true });
+
+      if (motionSuppressed) return;
+      if (actionTargetHighlightTimerRef.current !== null) {
+        window.clearTimeout(actionTargetHighlightTimerRef.current);
+      }
+      highlightedActionTargetRef.current?.removeAttribute(
+        "data-chat-action-target",
+      );
+      highlightedActionTargetRef.current = target;
+      target.setAttribute("data-chat-action-target", "true");
+      actionTargetHighlightTimerRef.current = window.setTimeout(() => {
+        target.removeAttribute("data-chat-action-target");
+        if (highlightedActionTargetRef.current === target) {
+          highlightedActionTargetRef.current = null;
+        }
+        actionTargetHighlightTimerRef.current = null;
+      }, 1_200);
+    };
+
+    const waitForScrollArrival = (target: HTMLElement) => {
+      if (motionSuppressed) {
+        completeTargetArrival(target);
+        return;
+      }
+
+      const scrollStartedAt = window.performance.now();
+      let lastScrollTop =
+        document.scrollingElement?.scrollTop ?? window.scrollY;
+      let settledFrames = 0;
+      const wait = () => {
+        if (pendingActionAnchorRef.current !== anchor) return;
+        const scrollTop =
+          document.scrollingElement?.scrollTop ?? window.scrollY;
+        settledFrames =
+          Math.abs(scrollTop - lastScrollTop) <= 0.5
+            ? settledFrames + 1
+            : 0;
+        lastScrollTop = scrollTop;
+
+        const rect = target.getBoundingClientRect();
+        const scrollMarginTop =
+          Number.parseFloat(window.getComputedStyle(target).scrollMarginTop) ||
+          0;
+        const scroller = document.scrollingElement;
+        const atBottom = scroller
+          ? scrollTop + window.innerHeight >= scroller.scrollHeight - 2
+          : false;
+        const visiblySettled =
+          settledFrames >= 4 &&
+          rect.bottom > 0 &&
+          rect.top < Math.max(320, window.innerHeight * 0.65);
+        const targetReached =
+          Math.abs(rect.top - scrollMarginTop) <= 3 ||
+          (atBottom && rect.top >= 0 && rect.top < window.innerHeight) ||
+          visiblySettled;
+        const timedOut =
+          window.performance.now() - scrollStartedAt >=
+          ACTION_TARGET_SCROLL_TIMEOUT_MS;
+
+        if ((targetReached && settledFrames >= 2) || timedOut) {
+          completeTargetArrival(target);
+          return;
+        }
+        actionScrollFrameRef.current = window.requestAnimationFrame(wait);
+      };
+      actionScrollFrameRef.current = window.requestAnimationFrame(wait);
+    };
+
     const scroll = () => {
       if (pendingActionAnchorRef.current !== anchor) return;
       const target = document.getElementById(anchor);
@@ -418,17 +509,23 @@ export function ChatProvider({ children }: Readonly<{ children: ReactNode }>) {
         return;
       }
 
+      const transitionElements = [
+        target,
+        target.closest<HTMLElement>(".about-page-content"),
+        target.closest<HTMLElement>(".research-panel-content"),
+      ].filter((element): element is HTMLElement => element !== null);
       const runningAnimations = motionSuppressed
         ? []
-        : target
-            .getAnimations()
-            .filter(
-              (animation) =>
+        : transitionElements.flatMap((element) =>
+            element.getAnimations().filter((animation) => {
+              const name = (animation as CSSAnimation).animationName ?? "";
+              return (
                 animation.playState === "running" &&
-                (animation as CSSAnimation).animationName?.startsWith(
-                  "about-page-",
-                ),
-            );
+                (name.startsWith("about-page-") ||
+                  name.startsWith("research-panel-"))
+              );
+            }),
+          );
       if (runningAnimations.length > 0) {
         void Promise.allSettled(
           runningAnimations.map((animation) => animation.finished),
@@ -438,33 +535,12 @@ export function ChatProvider({ children }: Readonly<{ children: ReactNode }>) {
         return;
       }
 
-      pendingActionAnchorRef.current = null;
-      pendingActionPathRef.current = null;
-      activeActionNavigationRouteRef.current = null;
       actionScrollTimerRef.current = null;
       target.scrollIntoView({
         behavior: motionSuppressed ? "auto" : "smooth",
         block: "start",
       });
-      target.focus({ preventScroll: true });
-
-      if (!motionSuppressed) {
-        if (actionTargetHighlightTimerRef.current !== null) {
-          window.clearTimeout(actionTargetHighlightTimerRef.current);
-        }
-        highlightedActionTargetRef.current?.removeAttribute(
-          "data-chat-action-target",
-        );
-        highlightedActionTargetRef.current = target;
-        target.setAttribute("data-chat-action-target", "true");
-        actionTargetHighlightTimerRef.current = window.setTimeout(() => {
-          target.removeAttribute("data-chat-action-target");
-          if (highlightedActionTargetRef.current === target) {
-            highlightedActionTargetRef.current = null;
-          }
-          actionTargetHighlightTimerRef.current = null;
-        }, 1_200);
-      }
+      waitForScrollArrival(target);
     };
     actionScrollFrameRef.current = window.requestAnimationFrame(() => {
       actionScrollFrameRef.current = window.requestAnimationFrame(scroll);
@@ -499,19 +575,6 @@ export function ChatProvider({ children }: Readonly<{ children: ReactNode }>) {
         routePath === normalizeNavigationPath(pathname)
       ) {
         pendingActionAwaitingPageEntryRef.current = false;
-        const targetHash = `#${encodeURIComponent(actionAnchor)}`;
-        if (window.location.hash === targetHash) {
-          window.dispatchEvent(new HashChangeEvent("hashchange"));
-        } else {
-          const targetUrl = new URL(window.location.href);
-          targetUrl.hash = targetHash;
-          window.history.pushState(
-            window.history.state,
-            "",
-            `${targetUrl.pathname}${targetUrl.search}${targetUrl.hash}`,
-          );
-          window.dispatchEvent(new HashChangeEvent("hashchange"));
-        }
         scrollToPendingActionAnchor();
         return;
       }
@@ -541,7 +604,7 @@ export function ChatProvider({ children }: Readonly<{ children: ReactNode }>) {
         const handledByAboutLayout = !window.dispatchEvent(event);
         if (!handledByAboutLayout) {
           pendingActionAwaitingPageEntryRef.current = false;
-          router.push(route, { scroll: false });
+          router.push(routePath, { scroll: false });
         }
       };
 

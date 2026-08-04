@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import type { PostData } from "@/lib/posts";
 import { compareEnglishFirst } from "@/lib/textSort";
@@ -24,6 +24,21 @@ export default function LogEntries({ posts }: LogEntriesProps) {
     ? posts.filter((post) => post.tags?.includes(selectedTag))
     : posts;
 
+  useEffect(() => {
+    const revealActionTarget = () => {
+      const anchor = window.location.hash.replace(/^#/u, "");
+      const prefix = "log-card-";
+      if (!anchor.startsWith(prefix)) return;
+      const targetSlug = anchor.slice(prefix.length);
+      if (posts.some(({ slug }) => slug === targetSlug)) {
+        setSelectedTag(null);
+      }
+    };
+    revealActionTarget();
+    window.addEventListener("hashchange", revealActionTarget);
+    return () => window.removeEventListener("hashchange", revealActionTarget);
+  }, [posts]);
+
   return (
     <section
       id="log-entries"
@@ -32,7 +47,11 @@ export default function LogEntries({ posts }: LogEntriesProps) {
       aria-labelledby="log-entries-title"
     >
       <div className={styles.toolbar}>
-        <div className={styles.toolbarTitle}>
+        <div
+          id="log-entries-heading"
+          className={styles.toolbarTitle}
+          tabIndex={-1}
+        >
           <p className={styles.eyebrow}>ARCHIVE</p>
           <h2 id="log-entries-title" className={styles.heading}>전체 기록</h2>
         </div>
@@ -67,7 +86,12 @@ export default function LogEntries({ posts }: LogEntriesProps) {
       ) : (
         <div className={styles.list}>
           {visiblePosts.map(({ slug, title, date, tags: postTags, summary }) => (
-            <article key={slug} className={styles.card}>
+            <article
+              key={slug}
+              id={`log-card-${slug}`}
+              className={styles.card}
+              tabIndex={-1}
+            >
               <div className={styles.cardMeta}>
                 {(postTags?.length ?? 0) > 0 && (
                   <div className={styles.tagList} aria-label="글 태그">

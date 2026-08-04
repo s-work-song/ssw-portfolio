@@ -10,10 +10,12 @@ export default function ResearchTabs({
   tabs,
   activeTab,
   onSelect,
+  actionTargetTab = null,
 }: {
   tabs: ResearchTab[];
   activeTab: ResearchTabId;
   onSelect: (tab: ResearchTabId) => void;
+  actionTargetTab?: ResearchTabId | null;
 }) {
   return (
     <nav
@@ -38,6 +40,9 @@ export default function ResearchTabs({
             role="tab"
             aria-selected={isActive}
             aria-controls={`research-panel-${tab.id}`}
+            data-chat-action-research-tab-target={
+              actionTargetTab === tab.id ? 'true' : undefined
+            }
             onClick={() => onSelect(tab.id)}
             style={{
               background: isActive ? 'var(--bg-elev)' : 'transparent',

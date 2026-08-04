@@ -79,6 +79,7 @@ export default function AboutMeLayout({
     if (exitingPath === pathname || settledPath === currentPath) return;
     window.clearTimeout(entryTimerRef.current);
     entryTimerRef.current = 0;
+    setExitingPath(null);
     setSettledPath(currentPath);
     announceChatActionPageEntry(currentPath);
   }, [currentPath, exitingPath, pathname, settledPath]);
@@ -94,6 +95,7 @@ export default function AboutMeLayout({
     }
 
     entryTimerRef.current = window.setTimeout(() => {
+      setExitingPath(null);
       setSettledPath(currentPath);
       entryTimerRef.current = 0;
       announceChatActionPageEntry(currentPath);
@@ -137,7 +139,6 @@ export default function AboutMeLayout({
       setExitingPath(pathname);
       window.clearTimeout(navigationTimerRef.current);
       navigationTimerRef.current = window.setTimeout(() => {
-        setExitingPath(null);
         setActionTargetTab(null);
         router.push(targetRoute, { scroll });
       }, PAGE_EXIT_DURATION_MS);
@@ -164,7 +165,7 @@ export default function AboutMeLayout({
         reduceMotion()
       ) {
         setActionTargetTab(null);
-        startTabNavigation(route, false);
+        startTabNavigation(targetPath, false);
         return;
       }
 
@@ -181,7 +182,9 @@ export default function AboutMeLayout({
       });
       actionAttractionTimerRef.current = window.setTimeout(() => {
         actionAttractionTimerRef.current = 0;
-        startTabNavigation(route, false);
+        // 해시는 다음 페이지가 진입한 뒤 ChatProvider가 적용한다. 여기서 함께
+        // 넘기면 브라우저의 기본 앵커 점프가 단계형 이동 연출보다 먼저 실행된다.
+        startTabNavigation(targetPath, false);
       }, CHAT_ACTION_TAB_ATTRACTION_MS);
     };
 
