@@ -36,6 +36,15 @@ import {
 } from "./constants";
 import { ChatContext, type ChatContextValue } from "./ChatContext";
 import { ChatWidget } from "./ChatWidget";
+import {
+  CHAT_ACTION_NAVIGATE_EVENT,
+  CHAT_ACTION_PAGE_ENTERED_EVENT,
+  aboutTabPathFromPath,
+  normalizeNavigationPath,
+  pathWithoutHash,
+  type ChatActionNavigateDetail,
+  type ChatActionPageEnteredDetail,
+} from "./navigation";
 import type {
   ActionId,
   AudienceChoice,
@@ -57,6 +66,9 @@ const MOBILE_EXIT_DURATION_MS = 260;
 const CHAT_STATUS_TIMEOUT_MS = 5_000;
 const STREAM_RENDER_CHUNK_CHARACTERS = 8;
 const STREAM_RENDER_INTERVAL_MS = 48;
+const ACTION_TOP_SCROLL_TIMEOUT_MS = 900;
+const ACTION_TARGET_WAIT_TIMEOUT_MS = 3_000;
+const ACTION_PAGE_ENTRY_FALLBACK_MS = 720;
 
 /**
  * PC 패널이 퇴장 연출을 끝낼 때까지 DOM을 유지할 시간이다.
@@ -156,7 +168,7 @@ interface PendingRetry {
 export function ChatProvider({ children }: Readonly<{ children: ReactNode }>) {
   const pathname = usePathname();
   const router = useRouter();
-  const { motion } = useTheme();
+  const { motion, pageTransition } = useTheme();
   const [isOpen, setIsOpen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -188,8 +200,14 @@ export function ChatProvider({ children }: Readonly<{ children: ReactNode }>) {
   const closeTimerRef = useRef<number | null>(null);
   const actionScrollFrameRef = useRef<number | null>(null);
   const actionScrollTimerRef = useRef<number | null>(null);
+  const actionTopScrollFrameRef = useRef<number | null>(null);
+  const actionPageEntryTimerRef = useRef<number | null>(null);
   const actionTargetHighlightTimerRef = useRef<number | null>(null);
   const highlightedActionTargetRef = useRef<HTMLElement | null>(null);
+  const pendingActionPathRef = useRef<string | null>(null);
+  const pendingActionAwaitingPageEntryRef = useRef(false);
+  const activeActionNavigationRouteRef = useRef<string | null>(null);
+  const actionNavigationTokenRef = useRef(0);
   const isOpenRef = useRef(false);
   const isClosingRef = useRef(false);
   const cleanupHistoryPopRef = useRef(false);
@@ -334,6 +352,12 @@ export function ChatProvider({ children }: Readonly<{ children: ReactNode }>) {
       if (actionScrollTimerRef.current !== null) {
         window.clearTimeout(actionScrollTimerRef.current);
       }
+      if (actionTopScrollFrameRef.current !== null) {
+        window.cancelAnimationFrame(actionTopScrollFrameRef.current);
+      }
+      if (actionPageEntryTimerRef.current !== null) {
+        window.clearTimeout(actionPageEntryTimerRef.current);
+      }
       if (actionTargetHighlightTimerRef.current !== null) {
         window.clearTimeout(actionTargetHighlightTimerRef.current);
       }
@@ -380,13 +404,43 @@ export function ChatProvider({ children }: Readonly<{ children: ReactNode }>) {
       if (pendingActionAnchorRef.current !== anchor) return;
       const target = document.getElementById(anchor);
       if (!target) {
-        if (window.performance.now() - startedAt < 1_200) {
+        if (
+          window.performance.now() - startedAt <
+          ACTION_TARGET_WAIT_TIMEOUT_MS
+        ) {
           actionScrollTimerRef.current = window.setTimeout(scroll, 50);
+        } else {
+          pendingActionAnchorRef.current = null;
+          pendingActionPathRef.current = null;
+          activeActionNavigationRouteRef.current = null;
+          actionScrollTimerRef.current = null;
         }
         return;
       }
 
+      const runningAnimations = motionSuppressed
+        ? []
+        : target
+            .getAnimations()
+            .filter(
+              (animation) =>
+                animation.playState === "running" &&
+                (animation as CSSAnimation).animationName?.startsWith(
+                  "about-page-",
+                ),
+            );
+      if (runningAnimations.length > 0) {
+        void Promise.allSettled(
+          runningAnimations.map((animation) => animation.finished),
+        ).then(() => {
+          if (pendingActionAnchorRef.current === anchor) scroll();
+        });
+        return;
+      }
+
       pendingActionAnchorRef.current = null;
+      pendingActionPathRef.current = null;
+      activeActionNavigationRouteRef.current = null;
       actionScrollTimerRef.current = null;
       target.scrollIntoView({
         behavior: motionSuppressed ? "auto" : "smooth",
@@ -419,39 +473,169 @@ export function ChatProvider({ children }: Readonly<{ children: ReactNode }>) {
 
   const navigateToActionTarget = useCallback(
     (route: string) => {
+      if (activeActionNavigationRouteRef.current === route) return;
+      activeActionNavigationRouteRef.current = route;
+      actionNavigationTokenRef.current += 1;
+      const navigationToken = actionNavigationTokenRef.current;
+      if (actionTopScrollFrameRef.current !== null) {
+        window.cancelAnimationFrame(actionTopScrollFrameRef.current);
+        actionTopScrollFrameRef.current = null;
+      }
+      if (actionPageEntryTimerRef.current !== null) {
+        window.clearTimeout(actionPageEntryTimerRef.current);
+        actionPageEntryTimerRef.current = null;
+      }
+
       const hashIndex = route.indexOf("#");
       const actionAnchor =
         hashIndex >= 0
           ? decodeURIComponent(route.slice(hashIndex + 1))
           : null;
       pendingActionAnchorRef.current = actionAnchor;
-
-      const normalizePath = (value: string) =>
-        value.length > 1 ? value.replace(/\/+$/, "") : value;
-      const routePath = hashIndex >= 0 ? route.slice(0, hashIndex) : route;
+      const routePath = pathWithoutHash(route);
+      pendingActionPathRef.current = routePath;
       if (
         actionAnchor &&
-        normalizePath(routePath) === normalizePath(pathname)
+        routePath === normalizeNavigationPath(pathname)
       ) {
+        pendingActionAwaitingPageEntryRef.current = false;
         const targetHash = `#${encodeURIComponent(actionAnchor)}`;
         if (window.location.hash === targetHash) {
           window.dispatchEvent(new HashChangeEvent("hashchange"));
         } else {
-          window.location.hash = targetHash;
+          const targetUrl = new URL(window.location.href);
+          targetUrl.hash = targetHash;
+          window.history.pushState(
+            window.history.state,
+            "",
+            `${targetUrl.pathname}${targetUrl.search}${targetUrl.hash}`,
+          );
+          window.dispatchEvent(new HashChangeEvent("hashchange"));
         }
         scrollToPendingActionAnchor();
         return;
       }
 
-      router.push(route, { scroll: false });
-      scrollToPendingActionAnchor();
+      const currentTabPath = aboutTabPathFromPath(pathname);
+      const targetTabPath = aboutTabPathFromPath(routePath);
+      const attractTab =
+        currentTabPath !== null &&
+        targetTabPath !== null &&
+        currentTabPath !== targetTabPath;
+      const shouldStageTab =
+        attractTab && !motionSuppressed && pageTransition !== "none";
+
+      router.prefetch(routePath);
+
+      const dispatchNavigation = () => {
+        if (actionNavigationTokenRef.current !== navigationToken) return;
+        const event = new CustomEvent<ChatActionNavigateDetail>(
+          CHAT_ACTION_NAVIGATE_EVENT,
+          {
+            cancelable: true,
+            detail: { route, attractTab: shouldStageTab },
+          },
+        );
+        pendingActionAwaitingPageEntryRef.current =
+          !motionSuppressed && pageTransition !== "none";
+        const handledByAboutLayout = !window.dispatchEvent(event);
+        if (!handledByAboutLayout) {
+          pendingActionAwaitingPageEntryRef.current = false;
+          router.push(route, { scroll: false });
+        }
+      };
+
+      if (!shouldStageTab) {
+        dispatchNavigation();
+        return;
+      }
+
+      const startedAt = window.performance.now();
+      let settledFrames = 0;
+      window.scrollTo({ top: 0, behavior: "smooth" });
+
+      const waitForTop = () => {
+        if (actionNavigationTokenRef.current !== navigationToken) return;
+        const scrollTop =
+          document.scrollingElement?.scrollTop ?? window.scrollY;
+        settledFrames = scrollTop <= 2 ? settledFrames + 1 : 0;
+        if (
+          settledFrames >= 2 ||
+          window.performance.now() - startedAt >= ACTION_TOP_SCROLL_TIMEOUT_MS
+        ) {
+          actionTopScrollFrameRef.current = null;
+          dispatchNavigation();
+          return;
+        }
+        actionTopScrollFrameRef.current =
+          window.requestAnimationFrame(waitForTop);
+      };
+      actionTopScrollFrameRef.current =
+        window.requestAnimationFrame(waitForTop);
     },
-    [pathname, router, scrollToPendingActionAnchor],
+    [
+      motionSuppressed,
+      pageTransition,
+      pathname,
+      router,
+      scrollToPendingActionAnchor,
+    ],
   );
 
   useEffect(() => {
-    scrollToPendingActionAnchor();
+    const pendingPath = pendingActionPathRef.current;
+    if (
+      !pendingPath ||
+      normalizeNavigationPath(pathname) !== pendingPath
+    ) {
+      return;
+    }
+
+    if (!pendingActionAwaitingPageEntryRef.current) {
+      scrollToPendingActionAnchor();
+      return;
+    }
+
+    if (actionPageEntryTimerRef.current !== null) {
+      window.clearTimeout(actionPageEntryTimerRef.current);
+    }
+    actionPageEntryTimerRef.current = window.setTimeout(() => {
+      actionPageEntryTimerRef.current = null;
+      pendingActionAwaitingPageEntryRef.current = false;
+      scrollToPendingActionAnchor();
+    }, ACTION_PAGE_ENTRY_FALLBACK_MS);
   }, [pathname, scrollToPendingActionAnchor]);
+
+  useEffect(() => {
+    const handlePageEntered = (rawEvent: Event) => {
+      const event = rawEvent as CustomEvent<ChatActionPageEnteredDetail>;
+      const enteredPath = event.detail?.path;
+      if (
+        !enteredPath ||
+        normalizeNavigationPath(enteredPath) !== pendingActionPathRef.current ||
+        !pendingActionAwaitingPageEntryRef.current
+      ) {
+        return;
+      }
+
+      if (actionPageEntryTimerRef.current !== null) {
+        window.clearTimeout(actionPageEntryTimerRef.current);
+        actionPageEntryTimerRef.current = null;
+      }
+      pendingActionAwaitingPageEntryRef.current = false;
+      scrollToPendingActionAnchor();
+    };
+
+    window.addEventListener(
+      CHAT_ACTION_PAGE_ENTERED_EVENT,
+      handlePageEntered,
+    );
+    return () =>
+      window.removeEventListener(
+        CHAT_ACTION_PAGE_ENTERED_EVENT,
+        handlePageEntered,
+      );
+  }, [scrollToPendingActionAnchor]);
 
   const refreshAvailability = useCallback(async () => {
     statusAbortRef.current?.abort();

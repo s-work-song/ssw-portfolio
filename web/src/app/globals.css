@@ -483,6 +483,27 @@ input, select, textarea, button {
   border-color: var(--border-strong);
 }
 
+.about-subnav-link[data-chat-action-tab-target="true"] {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, var(--bg-elev));
+  border-color: color-mix(in srgb, var(--accent) 58%, var(--border));
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 12%, transparent);
+  animation: chat-action-tab-attraction 240ms cubic-bezier(0.22, 1, 0.36, 1)
+    both;
+}
+
+@keyframes chat-action-tab-attraction {
+  0% {
+    transform: translateY(0) scale(1);
+  }
+  58% {
+    transform: translateY(-3px) scale(1.045);
+  }
+  100% {
+    transform: translateY(-1px) scale(1.015);
+  }
+}
+
 /* About 콘텐츠의 반응형 그리드 */
 .about-grid {
   display: grid;

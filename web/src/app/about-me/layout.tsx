@@ -9,9 +9,41 @@ import React from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useTheme } from '../../context/ThemeContext';
+import {
+  CHAT_ACTION_NAVIGATE_EVENT,
+  CHAT_ACTION_PAGE_ENTERED_EVENT,
+  aboutTabPathFromPath,
+  normalizeNavigationPath,
+  pathWithoutHash,
+  type ChatActionNavigateDetail,
+  type ChatActionPageEnteredDetail,
+} from '../../features/chat/navigation';
 
 const PAGE_EXIT_DURATION_MS = 150;
 const PAGE_ENTRY_FALLBACK_MS = 600;
+const CHAT_ACTION_TAB_ATTRACTION_MS = 240;
+
+const ABOUT_TABS = [
+  { label: "소개 (Overview)", shortLabel: "소개", href: "/about-me" },
+  { label: "이력서 (Resume)", shortLabel: "이력서", href: "/about-me/resume" },
+  { label: "자기소개서 (Cover Letter)", shortLabel: "자기소개서", href: "/about-me/cover-letter" },
+  { label: "연구 경험 (Research)", shortLabel: "연구", href: "/about-me/research" },
+  { label: "기록 (Log)", shortLabel: "기록", href: "/about-me/log" },
+] as const;
+
+function tabIndexForPath(path: string): number {
+  const tabPath = aboutTabPathFromPath(path);
+  return ABOUT_TABS.findIndex((tab) => tab.href === tabPath);
+}
+
+function announceChatActionPageEntry(path: string): void {
+  window.dispatchEvent(
+    new CustomEvent<ChatActionPageEnteredDetail>(
+      CHAT_ACTION_PAGE_ENTERED_EVENT,
+      { detail: { path } },
+    ),
+  );
+}
 
 export default function AboutMeLayout({
   children,
@@ -25,37 +57,32 @@ export default function AboutMeLayout({
     'forward' | 'backward'
   >('forward');
   const [exitingPath, setExitingPath] = React.useState<string | null>(null);
+  const [actionTargetTab, setActionTargetTab] = React.useState<string | null>(
+    null,
+  );
   const navigationTimerRef = React.useRef(0);
   const entryTimerRef = React.useRef(0);
-
-  const tabs = [
-    { label: "소개 (Overview)", shortLabel: "소개", href: "/about-me" },
-    { label: "이력서 (Resume)", shortLabel: "이력서", href: "/about-me/resume" },
-    { label: "자기소개서 (Cover Letter)", shortLabel: "자기소개서", href: "/about-me/cover-letter" },
-    { label: "연구 경험 (Research)", shortLabel: "연구", href: "/about-me/research" },
-    { label: "기록 (Log)", shortLabel: "기록", href: "/about-me/log" },
-  ];
-
-  const normalizePath = (path: string) =>
-    path.length > 1 ? path.replace(/\/+$/, "") : path;
-  const currentPath = normalizePath(pathname);
+  const actionAttractionTimerRef = React.useRef(0);
+  const currentPath = normalizeNavigationPath(pathname);
   const [settledPath, setSettledPath] = React.useState(currentPath);
 
   /** 중첩 로그 경로까지 올바르게 활성화하되 Overview는 정확히 일치할 때만 선택한다. */
   const isActive = (href: string) => {
-    const normalizedHref = normalizePath(href);
+    const normalizedHref = normalizeNavigationPath(href);
     if (href === "/about-me") {
       return currentPath === normalizedHref;
     }
     return currentPath.startsWith(normalizedHref);
   };
 
-  const tabIndexForPath = (path: string) =>
-    tabs.findIndex((tab, index) =>
-      index === 0
-        ? normalizePath(path) === tab.href
-        : normalizePath(path).startsWith(tab.href),
-    );
+  const completePageEntry = React.useCallback(() => {
+    if (exitingPath === pathname || settledPath === currentPath) return;
+    window.clearTimeout(entryTimerRef.current);
+    entryTimerRef.current = 0;
+    setSettledPath(currentPath);
+    announceChatActionPageEntry(currentPath);
+  }, [currentPath, exitingPath, pathname, settledPath]);
+
   React.useEffect(() => {
     window.clearTimeout(navigationTimerRef.current);
     navigationTimerRef.current = 0;
@@ -69,6 +96,7 @@ export default function AboutMeLayout({
     entryTimerRef.current = window.setTimeout(() => {
       setSettledPath(currentPath);
       entryTimerRef.current = 0;
+      announceChatActionPageEntry(currentPath);
     }, PAGE_ENTRY_FALLBACK_MS);
   }, [currentPath, settledPath]);
 
@@ -76,52 +104,119 @@ export default function AboutMeLayout({
     () => () => {
       window.clearTimeout(navigationTimerRef.current);
       window.clearTimeout(entryTimerRef.current);
+      window.clearTimeout(actionAttractionTimerRef.current);
     },
     [],
   );
 
-  const completePageEntry = () => {
-    if (exitingPath === pathname || settledPath === currentPath) return;
-    window.clearTimeout(entryTimerRef.current);
-    entryTimerRef.current = 0;
-    setSettledPath(currentPath);
-  };
+  const reduceMotion = React.useCallback(
+    () =>
+      motion === 'off' ||
+      (motion === 'system' &&
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches),
+    [motion],
+  );
+
+  const startTabNavigation = React.useCallback(
+    (targetRoute: string, scroll: boolean) => {
+      const targetPath = pathWithoutHash(targetRoute);
+      const currentTabIndex = tabIndexForPath(pathname);
+      const targetTabIndex = tabIndexForPath(targetPath);
+      if (currentTabIndex >= 0 && targetTabIndex >= 0) {
+        setTransitionDirection(
+          targetTabIndex >= currentTabIndex ? 'forward' : 'backward',
+        );
+      }
+
+      if (pageTransition === 'none' || reduceMotion()) {
+        setActionTargetTab(null);
+        router.push(targetRoute, { scroll });
+        return;
+      }
+
+      setExitingPath(pathname);
+      window.clearTimeout(navigationTimerRef.current);
+      navigationTimerRef.current = window.setTimeout(() => {
+        setExitingPath(null);
+        setActionTargetTab(null);
+        router.push(targetRoute, { scroll });
+      }, PAGE_EXIT_DURATION_MS);
+    },
+    [pageTransition, pathname, reduceMotion, router],
+  );
+
+  React.useEffect(() => {
+    const handleChatActionNavigation = (rawEvent: Event) => {
+      const event = rawEvent as CustomEvent<ChatActionNavigateDetail>;
+      const route = event.detail?.route;
+      if (!route) return;
+
+      const targetPath = pathWithoutHash(route);
+      const targetTabPath = aboutTabPathFromPath(targetPath);
+      if (!targetTabPath) return;
+
+      event.preventDefault();
+      window.clearTimeout(actionAttractionTimerRef.current);
+
+      if (
+        !event.detail.attractTab ||
+        pageTransition === 'none' ||
+        reduceMotion()
+      ) {
+        setActionTargetTab(null);
+        startTabNavigation(route, false);
+        return;
+      }
+
+      setActionTargetTab(targetTabPath);
+      window.requestAnimationFrame(() => {
+        const targetTab = document.querySelector<HTMLElement>(
+          `[data-about-tab-path="${targetTabPath}"]`,
+        );
+        targetTab?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'nearest',
+          inline: 'center',
+        });
+      });
+      actionAttractionTimerRef.current = window.setTimeout(() => {
+        actionAttractionTimerRef.current = 0;
+        startTabNavigation(route, false);
+      }, CHAT_ACTION_TAB_ATTRACTION_MS);
+    };
+
+    window.addEventListener(
+      CHAT_ACTION_NAVIGATE_EVENT,
+      handleChatActionNavigation,
+    );
+    return () =>
+      window.removeEventListener(
+        CHAT_ACTION_NAVIGATE_EVENT,
+        handleChatActionNavigation,
+      );
+  }, [pageTransition, reduceMotion, startTabNavigation]);
 
   const navigateTab = (
     event: React.MouseEvent<HTMLAnchorElement>,
     targetPath: string,
   ) => {
-    const currentTabIndex = tabIndexForPath(pathname);
-    const targetTabIndex = tabIndexForPath(targetPath);
-    const nextDirection =
-      targetTabIndex >= currentTabIndex ? 'forward' : 'backward';
-    setTransitionDirection(nextDirection);
-
     const modifiedClick =
       event.button !== 0 ||
       event.metaKey ||
       event.ctrlKey ||
       event.shiftKey ||
       event.altKey;
-    const reduceMotion =
-      motion === 'off' ||
-      (motion === 'system' &&
-        window.matchMedia('(prefers-reduced-motion: reduce)').matches);
     if (
       modifiedClick ||
-      normalizePath(targetPath) === currentPath ||
+      normalizeNavigationPath(targetPath) === currentPath ||
       pageTransition === 'none' ||
-      reduceMotion
+      reduceMotion()
     ) {
       return;
     }
 
     event.preventDefault();
-    setExitingPath(pathname);
-    navigationTimerRef.current = window.setTimeout(() => {
-      setExitingPath(null);
-      router.push(targetPath);
-    }, PAGE_EXIT_DURATION_MS);
+    startTabNavigation(targetPath, true);
   };
 
   const pageTransitionClassName = [
@@ -174,14 +269,19 @@ export default function AboutMeLayout({
           {/* Tabs on the right */}
           <div className="about-header-nav-row">
             <nav className="about-header-nav">
-              {tabs.map((tab) => {
+              {ABOUT_TABS.map((tab) => {
                 const active = isActive(tab.href);
+                const actionTarget = actionTargetTab === tab.href;
                 return (
                   <Link
                     key={tab.href}
                     href={tab.href}
                     onClick={(event) => navigateTab(event, tab.href)}
                     className={`about-subnav-link${active ? ' active' : ''}`}
+                    data-about-tab-path={tab.href}
+                    data-chat-action-tab-target={
+                      actionTarget ? 'true' : undefined
+                    }
                     aria-current={active ? 'page' : undefined}
                   >
                     <span className="about-tab-label-full">{tab.label}</span>

@@ -73,15 +73,14 @@ type VisualViewportStyle = CSSProperties &
 
 function summaryActionsForMessage(message: ChatMessage) {
   const segments = message.segments ?? [];
-  const lastInlineActionGroup = [...segments]
-    .reverse()
-    .find((segment) => segment.actions.length > 0);
-  const adjacentActionIds = new Set(
-    lastInlineActionGroup?.actions.map((action) => action.id) ?? [],
+  const inlineActionIds = new Set(
+    segments.flatMap((segment) =>
+      segment.actions.map((action) => action.id),
+    ),
   );
   const seen = new Set<string>();
   return (message.actions ?? []).filter((action) => {
-    if (adjacentActionIds.has(action.id) || seen.has(action.id)) return false;
+    if (inlineActionIds.has(action.id) || seen.has(action.id)) return false;
     seen.add(action.id);
     return true;
   });
