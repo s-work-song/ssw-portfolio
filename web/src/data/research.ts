@@ -171,17 +171,17 @@ export const researchTimelineItems: CareerItem[] = [
   {
     period: '2026–현재',
     color: '#6366f1',
-    role: 'Gemini Pro & Gemma 온디바이스 AI 실험',
+    role: 'Gemma4 온디바이스 AI 실험',
     org: '',
-    desc: 'Semantic Kernel을 사용하여 온디바이스 및 클라우드 LLM 인터페이스를 활용하는 예제를 설계하고, 오픈소스 가벼운 모델인 Gemma를 로컬에 띄워 테스트했습니다.',
-    tags: ['Gemini Pro', 'Gemma', 'Semantic Kernel']
+    desc: 'Semantic Kernel을 사용하여 온디바이스 및 클라우드 LLM 인터페이스를 활용하는 예제를 설계하고, 오픈소스 가벼운 모델인 Gemma4를 로컬에 띄워 테스트했습니다.',
+    tags: ['Gemma4', 'Semantic Kernel']
   },
   {
     period: '2026–현재',
     color: '#6366f1',
-    role: 'AI 에이전트(Claude Code) 페어 프로그래밍',
+    role: 'AI 에이전트 오케스트레이션',
     org: '',
-    desc: 'Claude Code 등의 고성능 AI 개발 터미널 에이전트를 페어 프로그래머로 도입하여, 로우레벨 성능 최적화 실험 결과를 체계적으로 검증하고 포트폴리오를 자동화 빌드 구조로 문서화했습니다.',
-    tags: ['Claude Code', 'AI Agent']
+    desc: '복수의 AI 개발 에이전트를 구현·검증·문서화 역할로 나누어 운영하며, 로우레벨 성능 최적화 실험 결과를 체계적으로 검증하고 포트폴리오를 자동화 빌드 구조로 문서화했습니다.',
+    tags: ['AI Agent', 'Orchestration']
   }
 ];

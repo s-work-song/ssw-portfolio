@@ -7,7 +7,6 @@ namespace SSW.Benchmarks.CountingSort.Benchmarks;
 [MemoryDiagnoser]
 [Config(typeof(SharedBenchmarkConfig))]
 [SimpleJob(warmupCount: 3, iterationCount: 10)]
-[InvocationCount(1)]
 public class CountingSortBenchmarks
 {
     private readonly IByteArraySorter _arraySort = new ArraySortByteArraySorter();
@@ -28,27 +27,27 @@ public class CountingSortBenchmarks
         _input = new byte[_source.Length];
     }
 
-    [IterationSetup]
-    public void RestoreInput()
+    [Benchmark(Baseline = true)]
+    public void ArraySort() => RestoreAndSort(_arraySort);
+
+    [Benchmark]
+    public void SingleCounting() => RestoreAndSort(_singleCounting);
+
+    [Benchmark]
+    public void TwoWayCounting() => RestoreAndSort(_twoWayCounting);
+
+    [Benchmark]
+    public void FourWayCounting() => RestoreAndSort(_fourWayCounting);
+
+    [Benchmark]
+    public void EightWayCounting() => RestoreAndSort(_eightWayCounting);
+
+    [Benchmark]
+    public void ParallelCounting() => RestoreAndSort(_parallelCounting);
+
+    private void RestoreAndSort(IByteArraySorter sorter)
     {
         _source.AsSpan().CopyTo(_input);
+        sorter.Sort(_input);
     }
-
-    [Benchmark(Baseline = true)]
-    public void ArraySort() => _arraySort.Sort(_input);
-
-    [Benchmark]
-    public void SingleCounting() => _singleCounting.Sort(_input);
-
-    [Benchmark]
-    public void TwoWayCounting() => _twoWayCounting.Sort(_input);
-
-    [Benchmark]
-    public void FourWayCounting() => _fourWayCounting.Sort(_input);
-
-    [Benchmark]
-    public void EightWayCounting() => _eightWayCounting.Sort(_input);
-
-    [Benchmark]
-    public void ParallelCounting() => _parallelCounting.Sort(_input);
 }

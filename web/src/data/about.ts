@@ -109,6 +109,13 @@ export const aboutProjects: AboutProject[] = [
     title: '코드 아카이브',
     category: 'Verified Code Archive',
     desc: 'AI로 구현한 코드를 테스트와 검증을 거쳐 고정 항목으로 등록하고, 주제·언어·식별 규칙에 따라 같은 검증 코드를 조회해 재사용하는 프로젝트입니다.',
-    status: '공개용 사이트 준비 중',
+    status: '공개 문서 저장소 운영 중',
+    links: [
+      {
+        label: 'GitHub 공개 문서',
+        href: 'https://github.com/s-work-agency/ssw-algorithm-archive-public',
+        kind: 'repository',
+      },
+    ],
   },
 ];

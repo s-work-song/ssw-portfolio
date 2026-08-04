@@ -109,8 +109,8 @@ export function BenchmarkEvidence({
       <ProjectLinks project={project} />
 
       <p className={styles.statusNote}>
-        화면의 기존 성능 수치와 같은 조건의 재현 여부는 아직 확인 전입니다.
-        코드는 구현 방식과 정답성 검증 구조를 확인하는 용도로 공개합니다.
+        공개 재구성 코드는 핵심 원리와 동작을 검증하기 위한 구현이며, 성능
+        수치는 실행 환경과 입력 데이터 및 구현 조건에 따라 달라질 수 있습니다.
       </p>
     </aside>
   );

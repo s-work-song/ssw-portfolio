@@ -18,15 +18,20 @@ tests/           # 형식별 round-trip과 경계값 검증
 bench/           # JSON과 Protobuf의 실제 serializer 호출
 ```
 
+BenchmarkDotNet의 `Allocated`는 직렬화 과정에서 관리 힙에 할당한 메모리이지, 전송되는 결과 데이터의 길이가 아닙니다. 실제 payload 크기는 별도 크기 보고서가 UTF-8 JSON과 Protobuf 결과 배열의 `Length`를 같은 입력별로 직접 비교합니다. 기본값 프레임, 일반 프레임, 256자 문자열을 포함한 프레임을 나누어 형식의 고정 오버헤드와 데이터 증가에 따른 변화를 확인할 수 있습니다.
+
 ## 실행
 
+이 디렉터리에서 실행합니다.
+
 ```powershell
-dotnet test SSW.Benchmarks.SerializationProtobuf.sln -c Release
-dotnet run -c Release --project bench/SSW.Benchmarks.SerializationProtobuf.Benchmarks -- --list flat
-dotnet run -c Release --project bench/SSW.Benchmarks.SerializationProtobuf.Benchmarks
+.\run-tests.ps1
+.\run-size-report.ps1
+.\run-benchmark.ps1 -List
+.\run-benchmark.ps1
 ```
 
-마지막 명령은 사용자가 자신의 환경에서 측정할 때만 실행합니다.
+크기 보고서는 실제 직렬화 결과의 바이트 수·절약 바이트·JSON 대비 감소율을 즉시 출력합니다. 마지막 명령은 시간과 관리 힙 할당량을 반복 측정하므로 사용자가 자신의 환경에서 측정할 때만 실행합니다.
 
 SDK 빌드와 BenchmarkDotNet 산출물은 `benchmarks/artifacts/` 아래에 모입니다.
 

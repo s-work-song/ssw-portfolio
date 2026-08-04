@@ -3,6 +3,7 @@ using SSW.Benchmarks.Shared.Benchmarking;
 using SSW.Benchmarks.SerializationProtobuf.Abstractions;
 using SSW.Benchmarks.SerializationProtobuf.Models;
 using SSW.Benchmarks.SerializationProtobuf.Serializers;
+using SSW.Benchmarks.SerializationProtobuf.TestData;
 
 namespace SSW.Benchmarks.SerializationProtobuf.Benchmarks;
 
@@ -12,7 +13,7 @@ namespace SSW.Benchmarks.SerializationProtobuf.Benchmarks;
 /// </summary>
 [MemoryDiagnoser]
 [Config(typeof(SharedBenchmarkConfig))]
-public sealed class FrameSerializationBenchmarks
+public class FrameSerializationBenchmarks
 {
     private readonly IFrameSerializer<InputFrame> _json = new JsonFrameSerializer();
     private readonly IFrameSerializer<InputFrame> _protobuf = new ProtobufFrameSerializer();
@@ -20,18 +21,7 @@ public sealed class FrameSerializationBenchmarks
 
     /// <summary>두 구현이 공유할 공개 가능한 고정 fixture를 준비합니다.</summary>
     [GlobalSetup]
-    public void Setup()
-    {
-        _frame = new InputFrame
-        {
-            X = 120,
-            Y = -45,
-            Buttons = 0b1011,
-            ScrollDelta = -3,
-            Tick = 42,
-            Email = "fixture@example.invalid",
-        };
-    }
+    public void Setup() => _frame = InputFrameFixtures.CreateStandard();
 
     [Benchmark(Baseline = true)]
     public byte[] Json() => _json.Serialize(_frame);

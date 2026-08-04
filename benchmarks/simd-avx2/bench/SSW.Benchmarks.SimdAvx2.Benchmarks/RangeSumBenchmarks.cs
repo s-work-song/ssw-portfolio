@@ -14,7 +14,7 @@ namespace SSW.Benchmarks.SimdAvx2.Benchmarks;
 /// </summary>
 [MemoryDiagnoser]
 [Config(typeof(SharedBenchmarkConfig))]
-public sealed class RangeSumBenchmarks
+public class RangeSumBenchmarks
 {
     private readonly ByteRange _range = new(40, 210);
     private readonly IRangeSumCalculator _branched = new BranchedRangeSumCalculator();
@@ -26,7 +26,16 @@ public sealed class RangeSumBenchmarks
 
     /// <summary>반복 간 데이터 생성을 제거하기 위해 고정 입력을 준비합니다.</summary>
     [GlobalSetup]
-    public void Setup() => _data = DeterministicByteData.Create(1_000_003);
+    public void Setup()
+    {
+        if (!System.Runtime.Intrinsics.X86.Avx2.IsSupported)
+        {
+            throw new PlatformNotSupportedException(
+                "이 성능 비교에는 AVX2 명령어와 256비트 YMM 레지스터를 지원하는 실행 환경이 필요합니다.");
+        }
+
+        _data = DeterministicByteData.Create(1_000_003);
+    }
 
     [Benchmark(Baseline = true)]
     public long Branched() => _branched.Sum(_data, _range);

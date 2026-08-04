@@ -23,9 +23,12 @@ duck-typing/
 
 ## 실행
 
+이 디렉터리에서 실행합니다.
+
 ```powershell
-dotnet test DuckTyping.sln -c Release
-dotnet run --project bench/SSW.Benchmarks.DuckTyping.Benchmarks -c Release
+.\run-tests.ps1
+.\run-benchmark.ps1 -List
+.\run-benchmark.ps1
 ```
 
 SDK 빌드와 BenchmarkDotNet 산출물은 `benchmarks/artifacts/` 아래에 모입니다.
