@@ -92,7 +92,7 @@ export const aboutProjects: AboutProject[] = [
       },
       {
         label: '관리자 데모',
-        href: 'https://admin-ecommerce.sworkagency.com/',
+        href: 'https://admin.ecommerce.sworkagency.com/',
         kind: 'demo',
       },
     ],
